@@ -1,0 +1,15 @@
+begin;
+
+-- Quitar el permiso general de actualización.
+revoke update on table public.profiles
+from authenticated;
+
+-- Permitir solamente editar nombre y teléfono.
+grant update (
+  full_name,
+  phone
+)
+on table public.profiles
+to authenticated;
+
+commit;

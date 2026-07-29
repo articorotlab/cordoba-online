@@ -1,5 +1,4 @@
-export const foodCategories = [
-  "Todos",
+export const restaurantCategories = [
   "Tacos",
   "Hamburguesas",
   "Alitas",
@@ -14,6 +13,14 @@ export const foodCategories = [
   "Fast food",
   "Otros",
 ] as const;
+
+export const foodCategories = [
+  "Todos",
+  ...restaurantCategories,
+] as const;
+
+export type RestaurantCategory =
+  (typeof restaurantCategories)[number];
 
 export type FoodCategory =
   (typeof foodCategories)[number];

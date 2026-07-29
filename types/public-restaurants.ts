@@ -8,7 +8,6 @@ export type PublicRestaurantProduct = {
   image: string | null;
   featured: boolean;
   active: boolean;
-  position: number;
 };
 
 export type PublicRestaurantPromotion = {

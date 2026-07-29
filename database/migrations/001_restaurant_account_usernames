@@ -1,0 +1,147 @@
+begin;
+
+-- =========================================================
+-- 1. AGREGAR NOMBRE DE USUARIO A LOS PERFILES
+-- =========================================================
+
+alter table public.profiles
+add column if not exists username text;
+
+-- =========================================================
+-- 2. NORMALIZAR NOMBRES DE USUARIO EXISTENTES
+-- =========================================================
+
+update public.profiles
+set username = lower(
+  regexp_replace(
+    split_part(
+      coalesce(
+        (
+          select auth.users.email
+          from auth.users
+          where auth.users.id = profiles.id
+        ),
+        profiles.full_name
+      ),
+      '@',
+      1
+    ),
+    '[^a-zA-Z0-9._-]+',
+    '-',
+    'g'
+  )
+)
+where username is null;
+
+-- Eliminar guiones repetidos o situados al inicio/final.
+update public.profiles
+set username = trim(
+  both '-'
+  from regexp_replace(username, '-+', '-', 'g')
+);
+
+-- =========================================================
+-- 3. VALIDACIONES DEL NOMBRE DE USUARIO
+-- =========================================================
+
+alter table public.profiles
+drop constraint if exists profiles_username_format_check;
+
+alter table public.profiles
+add constraint profiles_username_format_check
+check (
+  username ~ '^[a-z0-9][a-z0-9._-]{2,39}$'
+);
+
+create unique index if not exists profiles_username_unique
+on public.profiles (lower(username));
+
+alter table public.profiles
+alter column username set not null;
+
+-- =========================================================
+-- 4. ACTUALIZAR EL TRIGGER DE NUEVOS USUARIOS
+-- =========================================================
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_full_name text;
+  v_phone text;
+  v_username text;
+begin
+  v_full_name :=
+    nullif(
+      trim(
+        coalesce(
+          new.raw_user_meta_data ->> 'full_name',
+          ''
+        )
+      ),
+      ''
+    );
+
+  v_phone :=
+    nullif(
+      trim(
+        coalesce(
+          new.raw_user_meta_data ->> 'phone_number',
+          new.phone,
+          ''
+        )
+      ),
+      ''
+    );
+
+  v_username :=
+    nullif(
+      lower(
+        trim(
+          coalesce(
+            new.raw_user_meta_data ->> 'username',
+            split_part(new.email, '@', 1),
+            ''
+          )
+        )
+      ),
+      ''
+    );
+
+  v_username :=
+    trim(
+      both '-'
+      from regexp_replace(
+        coalesce(v_username, ''),
+        '[^a-z0-9._-]+',
+        '-',
+        'g'
+      )
+    );
+
+  insert into public.profiles (
+    id,
+    username,
+    full_name,
+    phone
+  )
+  values (
+    new.id,
+    v_username,
+    coalesce(
+      v_full_name,
+      split_part(new.email, '@', 1),
+      'Usuario'
+    ),
+    v_phone
+  )
+  on conflict (id) do nothing;
+
+  return new;
+end;
+$$;
+
+commit;

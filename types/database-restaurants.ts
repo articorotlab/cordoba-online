@@ -15,7 +15,7 @@ export type DatabaseRestaurantProduct = {
   image_url: string | null;
   featured: boolean;
   active: boolean;
-  position: number;
+  created_at: string;
 };
 
 export type DatabaseRestaurantPromotionDay = {

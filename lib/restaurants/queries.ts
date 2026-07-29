@@ -21,15 +21,15 @@ const restaurantSelect = `
   longitude,
   is_active,
   products:restaurant_products (
-    id,
-    name,
-    description,
-    price,
-    image_url,
-    featured,
-    active,
-    position
-  ),
+  id,
+  name,
+  description,
+  price,
+  image_url,
+  featured,
+  active,
+  created_at
+),
   promotions:restaurant_promotions (
     id,
     title,
@@ -68,9 +68,9 @@ export async function getPublicRestaurants(): Promise<
     .order("name", {
       ascending: true,
     })
-    .order("position", {
-      referencedTable: "restaurant_products",
-      ascending: true,
+    .order("created_at", {
+        referencedTable: "restaurant_products",
+        ascending: true,
     })
     .order("position", {
       referencedTable: "restaurant_promotions",

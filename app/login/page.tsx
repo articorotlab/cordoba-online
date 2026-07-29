@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { ArrowLeft, LockKeyhole, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  LockKeyhole,
+  UserRound,
+} from "lucide-react";
 
 import { login } from "@/app/auth/actions";
 import { PageContainer } from "@/components/layout/PageContainer";
@@ -41,6 +45,7 @@ export default async function LoginPage({
             aria-hidden="true"
             className="size-4"
           />
+
           Volver al inicio
         </Link>
 
@@ -58,8 +63,9 @@ export default async function LoginPage({
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Accede para consultar todas las promociones
-              disponibles en Córdoba.
+              Ingresa con tu correo electrónico o con el
+              nombre de usuario proporcionado por
+              cordoba.online.
             </p>
           </div>
 
@@ -82,7 +88,10 @@ export default async function LoginPage({
               </div>
             )}
 
-            <form action={login} className="space-y-5">
+            <form
+              action={login}
+              className="space-y-5"
+            >
               <input
                 type="hidden"
                 name="redirect"
@@ -91,23 +100,25 @@ export default async function LoginPage({
 
               <div>
                 <label
-                  htmlFor="email"
+                  htmlFor="identifier"
                   className="text-sm font-semibold text-slate-950"
                 >
-                  Correo electrónico
+                  Correo o nombre de usuario
                 </label>
 
                 <div className="relative mt-2">
-                  <Mail
+                  <UserRound
                     aria-hidden="true"
                     className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400"
                   />
 
                   <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
+                    id="identifier"
+                    name="identifier"
+                    type="text"
+                    autoComplete="username"
+                    autoCapitalize="none"
+                    spellCheck={false}
                     required
                     placeholder="correo@ejemplo.com"
                     className="h-12 rounded-2xl pl-11"

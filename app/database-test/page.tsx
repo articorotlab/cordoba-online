@@ -34,7 +34,6 @@ export default async function DatabaseTestPage() {
         image_url,
         featured,
         active,
-        position,
         created_at,
         updated_at
       ),
@@ -67,7 +66,7 @@ export default async function DatabaseTestPage() {
       )
     `)
     .eq("slug", "restaurante-prueba")
-    .order("position", {
+    .order("created_at", {
       referencedTable: "restaurant_products",
       ascending: true,
     })

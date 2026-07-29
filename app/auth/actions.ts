@@ -3,6 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import {
+  loginIdentifierToEmail,
+  normalizeLoginIdentifier,
+} from "@/lib/auth/identifiers";
 import { createClient } from "@/lib/supabase/server";
 
 function getRequiredField(
@@ -11,15 +15,23 @@ function getRequiredField(
 ) {
   const value = formData.get(field);
 
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`El campo ${field} es obligatorio.`);
+  if (
+    typeof value !== "string" ||
+    !value.trim()
+  ) {
+    throw new Error(
+      `El campo ${field} es obligatorio.`,
+    );
   }
 
   return value.trim();
 }
 
-function getSafeRedirectPath(formData: FormData) {
-  const redirectTo = formData.get("redirect");
+function getSafeRedirectPath(
+  formData: FormData,
+) {
+  const redirectTo =
+    formData.get("redirect");
 
   if (
     typeof redirectTo === "string" &&
@@ -32,32 +44,135 @@ function getSafeRedirectPath(formData: FormData) {
   return "/comer";
 }
 
-export async function login(formData: FormData) {
-  const email = getRequiredField(formData, "email");
-  const password = getRequiredField(formData, "password");
-  const redirectTo = getSafeRedirectPath(formData);
+function buildLoginRedirect(
+  type: "error" | "message",
+  message: string,
+  redirectTo: string,
+) {
+  const params = new URLSearchParams({
+    [type]: message,
+    redirect: redirectTo,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+async function getPostLoginPath(
+  userId: string,
+  requestedPath: string,
+) {
+  const supabase = await createClient();
+
+  const {
+    data: profile,
+    error: profileError,
+  } = await supabase
+    .from("profiles")
+    .select("platform_role")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (
+    !profileError &&
+    profile?.platform_role === "admin"
+  ) {
+    return "/admin";
+  }
+
+  const {
+    data: membership,
+    error: membershipError,
+  } = await supabase
+    .from("restaurant_members")
+    .select("restaurant_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (
+    !membershipError &&
+    membership
+  ) {
+    return "/panel";
+  }
+
+  if (
+    requestedPath.startsWith("/admin") ||
+    requestedPath.startsWith("/panel")
+  ) {
+    return "/comer";
+  }
+
+  return requestedPath;
+}
+
+export async function login(
+  formData: FormData,
+) {
+  const identifier = getRequiredField(
+    formData,
+    "identifier",
+  );
+
+  const password = getRequiredField(
+    formData,
+    "password",
+  );
+
+  const requestedPath =
+    getSafeRedirectPath(formData);
+
+  let email: string;
+
+  try {
+    email =
+      loginIdentifierToEmail(identifier);
+  } catch {
+    redirect(
+      buildLoginRedirect(
+        "error",
+        "Escribe un correo o nombre de usuario válido.",
+        requestedPath,
+      ),
+    );
+  }
 
   const supabase = await createClient();
 
-  const { error } =
+  const {
+    data,
+    error,
+  } =
     await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-  if (error) {
+  if (
+    error ||
+    !data.user
+  ) {
     redirect(
-      `/login?error=${encodeURIComponent(
-        "Correo o contraseña incorrectos.",
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      buildLoginRedirect(
+        "error",
+        "Usuario, correo o contraseña incorrectos.",
+        requestedPath,
+      ),
     );
   }
 
+  const destination =
+    await getPostLoginPath(
+      data.user.id,
+      requestedPath,
+    );
+
   revalidatePath("/", "layout");
-  redirect(redirectTo);
+  redirect(destination);
 }
 
-export async function register(formData: FormData) {
+export async function register(
+  formData: FormData,
+) {
   const name = getRequiredField(
     formData,
     "name",
@@ -68,31 +183,38 @@ export async function register(formData: FormData) {
     "phone",
   );
 
-  const email = getRequiredField(
-    formData,
-    "email",
-  );
+  const email =
+    normalizeLoginIdentifier(
+      getRequiredField(
+        formData,
+        "email",
+      ),
+    );
 
   const password = getRequiredField(
     formData,
     "password",
   );
 
-  const confirmPassword = getRequiredField(
-    formData,
-    "confirmPassword",
-  );
+  const confirmPassword =
+    getRequiredField(
+      formData,
+      "confirmPassword",
+    );
 
   const redirectTo =
     getSafeRedirectPath(formData);
 
-  const normalizedPhone = phone.replace(/\D/g, "");
+  const normalizedPhone =
+    phone.replace(/\D/g, "");
 
   if (name.length < 2) {
     redirect(
       `/registro?error=${encodeURIComponent(
         "Escribe un nombre válido.",
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      )}&redirect=${encodeURIComponent(
+        redirectTo,
+      )}`,
     );
   }
 
@@ -103,7 +225,9 @@ export async function register(formData: FormData) {
     redirect(
       `/registro?error=${encodeURIComponent(
         "Escribe un número de teléfono válido.",
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      )}&redirect=${encodeURIComponent(
+        redirectTo,
+      )}`,
     );
   }
 
@@ -111,37 +235,48 @@ export async function register(formData: FormData) {
     redirect(
       `/registro?error=${encodeURIComponent(
         "La contraseña debe tener al menos 8 caracteres.",
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      )}&redirect=${encodeURIComponent(
+        redirectTo,
+      )}`,
     );
   }
 
-  if (password !== confirmPassword) {
+  if (
+    password !== confirmPassword
+  ) {
     redirect(
       `/registro?error=${encodeURIComponent(
         "Las contraseñas no coinciden.",
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      )}&redirect=${encodeURIComponent(
+        redirectTo,
+      )}`,
     );
   }
 
   const supabase = await createClient();
 
-  const { data, error } =
-    await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          phone_number: normalizedPhone,
-        },
+  const {
+    data,
+    error,
+  } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        full_name: name,
+        phone_number:
+          normalizedPhone,
       },
-    });
+    },
+  });
 
   if (error) {
     redirect(
       `/registro?error=${encodeURIComponent(
         error.message,
-      )}&redirect=${encodeURIComponent(redirectTo)}`,
+      )}&redirect=${encodeURIComponent(
+        redirectTo,
+      )}`,
     );
   }
 
@@ -154,7 +289,9 @@ export async function register(formData: FormData) {
   redirect(
     `/login?message=${encodeURIComponent(
       "Cuenta creada. Revisa tu correo para confirmar tu cuenta.",
-    )}&redirect=${encodeURIComponent(redirectTo)}`,
+    )}&redirect=${encodeURIComponent(
+      redirectTo,
+    )}`,
   );
 }
 

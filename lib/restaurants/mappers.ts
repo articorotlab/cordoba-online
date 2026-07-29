@@ -44,7 +44,6 @@ export function mapRestaurantProduct(
     image: product.image_url,
     featured: product.featured,
     active: product.active,
-    position: product.position,
   };
 }
 
@@ -113,11 +112,7 @@ export function mapRestaurant(
     latitude: restaurant.latitude,
     longitude: restaurant.longitude,
 
-    products: products
-      .map(mapRestaurantProduct)
-      .sort((firstProduct, secondProduct) => {
-        return firstProduct.position - secondProduct.position;
-      }),
+    products: products.map(mapRestaurantProduct),
 
     promotions: promotions
       .map(mapRestaurantPromotion)
