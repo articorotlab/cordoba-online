@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { mapRestaurant } from "@/lib/restaurants/mappers";
 
 import type { DatabaseRestaurant } from "@/types/database-restaurants";
@@ -21,15 +21,15 @@ const restaurantSelect = `
   longitude,
   is_active,
   products:restaurant_products (
-  id,
-  name,
-  description,
-  price,
-  image_url,
-  featured,
-  active,
-  created_at
-),
+    id,
+    name,
+    description,
+    price,
+    image_url,
+    featured,
+    active,
+    created_at
+  ),
   promotions:restaurant_promotions (
     id,
     title,
@@ -59,7 +59,7 @@ const restaurantSelect = `
 export async function getPublicRestaurants(): Promise<
   PublicRestaurant[]
 > {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("restaurants")
@@ -69,8 +69,8 @@ export async function getPublicRestaurants(): Promise<
       ascending: true,
     })
     .order("created_at", {
-        referencedTable: "restaurant_products",
-        ascending: true,
+      referencedTable: "restaurant_products",
+      ascending: true,
     })
     .order("position", {
       referencedTable: "restaurant_promotions",
@@ -86,13 +86,15 @@ export async function getPublicRestaurants(): Promise<
     return [];
   }
 
-  return (data as DatabaseRestaurant[]).map(mapRestaurant);
+  return (data as DatabaseRestaurant[]).map(
+    mapRestaurant,
+  );
 }
 
 export async function getPublicRestaurantBySlug(
   slug: string,
 ): Promise<PublicRestaurant | null> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const { data, error } = await supabase
     .from("restaurants")
@@ -114,5 +116,7 @@ export async function getPublicRestaurantBySlug(
     return null;
   }
 
-  return mapRestaurant(data as DatabaseRestaurant);
+  return mapRestaurant(
+    data as DatabaseRestaurant,
+  );
 }

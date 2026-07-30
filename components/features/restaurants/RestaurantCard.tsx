@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   ArrowRight,
   Clock3,
@@ -6,8 +5,10 @@ import {
   Tag,
   Utensils,
 } from "lucide-react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
+import { getImageVariantUrl } from "@/lib/images/storage-url";
 import {
   isRestaurantOpenNow,
   restaurantHasPromotionToday,
@@ -22,10 +23,25 @@ type RestaurantCardProps = {
 export function RestaurantCard({
   restaurant,
 }: RestaurantCardProps) {
-  const isOpen = isRestaurantOpenNow(restaurant);
+  const isOpen =
+    isRestaurantOpenNow(restaurant);
 
   const hasPromotions =
-    restaurantHasPromotionToday(restaurant);
+    restaurantHasPromotionToday(
+      restaurant,
+    );
+
+  const coverCardUrl =
+    getImageVariantUrl(
+      restaurant.cover,
+      "card",
+    );
+
+  const logoCardUrl =
+    getImageVariantUrl(
+      restaurant.logo,
+      "card",
+    );
 
   return (
     <Link
@@ -33,18 +49,24 @@ export function RestaurantCard({
       className="group block overflow-hidden rounded-[2rem] border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
     >
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-white">
-        {restaurant.cover ? (
+        {coverCardUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={restaurant.cover}
+            src={coverCardUrl}
             alt={`Portada de ${restaurant.name}`}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           />
-        ) : restaurant.logo ? (
+        ) : logoCardUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={restaurant.logo}
+            src={logoCardUrl}
             alt={`Logo de ${restaurant.name}`}
+            width={256}
+            height={256}
+            loading="lazy"
+            decoding="async"
             className="size-28 object-contain transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
@@ -115,7 +137,9 @@ export function RestaurantCard({
               className="size-4"
             />
 
-            {isOpen ? "Abierto ahora" : "Cerrado"}
+            {isOpen
+              ? "Abierto ahora"
+              : "Cerrado"}
           </span>
         </div>
       </div>

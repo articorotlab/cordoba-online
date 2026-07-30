@@ -4,23 +4,51 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireRestaurant } from "@/lib/auth/require-restaurant";
-import { createClient } from "@/lib/supabase/server";
+import {
+  buildRestaurantImagePaths,
+  getStoragePathsFromPublicUrl,
+  IMAGE_BUCKET_NAME,
+  isValidImageUploadId,
+} from "@/lib/images/storage-paths";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-const BUCKET_NAME = "restaurant-images";
-
-const allowedImageTypes = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-] as const;
-
-type ImageKind = "logo" | "cover";
+import type {
+  RestaurantImageKind,
+} from "@/lib/images/storage-paths";
 
 type RestaurantImages = {
   slug: string;
   logo_url: string | null;
   cover_url: string | null;
 };
+
+type SignedUploadData = {
+  path: string;
+  token: string;
+};
+
+function isRestaurantImageKind(
+  value: string,
+): value is RestaurantImageKind {
+  return (
+    value === "logo" ||
+    value === "cover"
+  );
+}
+
+function getImageKindFromFormData(
+  formData: FormData,
+): RestaurantImageKind | null {
+  const value =
+    formData.get("imageKind");
+
+  return (
+    typeof value === "string" &&
+    isRestaurantImageKind(value)
+  )
+    ? value
+    : null;
+}
 
 function redirectToImages(
   type: "message" | "error",
@@ -36,69 +64,14 @@ function redirectToImages(
   );
 }
 
-function getImageKind(
-  formData: FormData,
-): ImageKind | null {
-  const value = formData.get("imageKind");
-
-  if (value === "logo" || value === "cover") {
-    return value;
-  }
-
-  return null;
-}
-
-function getExtension(file: File): string {
-  switch (file.type) {
-    case "image/jpeg":
-      return "jpg";
-
-    case "image/png":
-      return "png";
-
-    case "image/webp":
-      return "webp";
-
-    default:
-      return "";
-  }
-}
-
-function getStoragePathFromUrl(
-  imageUrl: string | null,
-): string | null {
-  if (!imageUrl) {
-    return null;
-  }
-
-  const publicPathMarker =
-    `/storage/v1/object/public/${BUCKET_NAME}/`;
-
-  const markerIndex =
-    imageUrl.indexOf(publicPathMarker);
-
-  if (markerIndex === -1) {
-    return null;
-  }
-
-  const encodedPath = imageUrl.slice(
-    markerIndex + publicPathMarker.length,
-  );
-
-  try {
-    return decodeURIComponent(encodedPath);
-  } catch {
-    return encodedPath;
-  }
-}
-
 async function getRestaurantImages(
   restaurantId: string,
-): Promise<RestaurantImages> {
-  const supabase = await createClient();
+): Promise<RestaurantImages | null> {
+  const supabase =
+    createAdminClient();
 
   const {
-    data: restaurant,
+    data,
     error,
   } = await supabase
     .from("restaurants")
@@ -108,176 +81,295 @@ async function getRestaurantImages(
       cover_url
     `)
     .eq("id", restaurantId)
-    .single();
+    .maybeSingle();
 
-  if (error || !restaurant) {
+  if (error || !data) {
     console.error(
       "Error al consultar las imágenes del restaurante:",
       error,
     );
 
-    redirectToImages(
-      "error",
-      "No fue posible consultar las imágenes actuales.",
-    );
+    return null;
   }
 
-  return restaurant as RestaurantImages;
+  return data as RestaurantImages;
 }
 
-function validateImage(
-  imageKind: ImageKind,
-  file: File,
+function getDatabaseColumn(
+  imageKind: RestaurantImageKind,
+): "logo_url" | "cover_url" {
+  return imageKind === "logo"
+    ? "logo_url"
+    : "cover_url";
+}
+
+function getCurrentImageUrl(
+  restaurant: RestaurantImages,
+  imageKind: RestaurantImageKind,
 ): string | null {
-  if (file.size === 0) {
-    return "Selecciona una imagen antes de continuar.";
-  }
-
-  if (
-    !allowedImageTypes.includes(
-      file.type as (typeof allowedImageTypes)[number],
-    )
-  ) {
-    return "Selecciona una imagen JPG, PNG o WebP.";
-  }
-
-  const maximumSize =
-    imageKind === "logo"
-      ? 2 * 1024 * 1024
-      : 5 * 1024 * 1024;
-
-  if (file.size > maximumSize) {
-    return imageKind === "logo"
-      ? "El logo no puede pesar más de 2 MB."
-      : "La portada no puede pesar más de 5 MB.";
-  }
-
-  return null;
+  return imageKind === "logo"
+    ? restaurant.logo_url
+    : restaurant.cover_url;
 }
 
 function revalidateRestaurantPages(
   slug: string,
 ) {
+  revalidatePath("/");
   revalidatePath("/panel");
   revalidatePath("/panel/restaurante");
   revalidatePath("/comer");
   revalidatePath("/comer/restaurantes");
-  revalidatePath(`/comer/${slug}`);
+
+  if (slug) {
+    revalidatePath(`/comer/${slug}`);
+  }
 }
 
-export async function uploadRestaurantImage(
-  formData: FormData,
+/*
+ * Primera parte del flujo:
+ *
+ * 1. Valida que el usuario controle un restaurante.
+ * 2. Genera rutas nuevas e inmutables.
+ * 3. Genera tokens temporales para subir directamente.
+ *
+ * Ningún archivo pasa por esta Server Action.
+ */
+export async function prepareRestaurantImageUpload(
+  imageKindValue: string,
 ) {
   const authContext =
     await requireRestaurant();
 
-  const imageKind =
-    getImageKind(formData);
-
-  if (!imageKind) {
-    redirectToImages(
-      "error",
-      "El tipo de imagen seleccionado no es válido.",
-    );
-  }
-
-  const fileValue =
-    formData.get("image");
-
-  if (!(fileValue instanceof File)) {
-    redirectToImages(
-      "error",
-      "Selecciona una imagen antes de continuar.",
-    );
-  }
-
-  const validationError =
-    validateImage(imageKind, fileValue);
-
-  if (validationError) {
-    redirectToImages(
-      "error",
-      validationError,
-    );
-  }
-
-  const extension =
-    getExtension(fileValue);
-
-  if (!extension) {
-    redirectToImages(
-      "error",
-      "No fue posible identificar el formato de la imagen.",
-    );
+  if (
+    !isRestaurantImageKind(
+      imageKindValue,
+    )
+  ) {
+    return {
+      ok: false as const,
+      error:
+        "El tipo de imagen seleccionado no es válido.",
+    };
   }
 
   const restaurantId =
     authContext.restaurant.id;
+
+  const uploadId =
+    crypto.randomUUID();
+
+  const paths =
+    buildRestaurantImagePaths({
+      restaurantId,
+      imageKind:
+        imageKindValue,
+      uploadId,
+    });
+
+  const supabase =
+    createAdminClient();
+
+  const [
+    cardResult,
+    displayResult,
+  ] = await Promise.all([
+    supabase.storage
+      .from(IMAGE_BUCKET_NAME)
+      .createSignedUploadUrl(
+        paths.card,
+      ),
+
+    supabase.storage
+      .from(IMAGE_BUCKET_NAME)
+      .createSignedUploadUrl(
+        paths.display,
+      ),
+  ]);
+
+  if (
+    cardResult.error ||
+    displayResult.error ||
+    !cardResult.data ||
+    !displayResult.data
+  ) {
+    console.error(
+      "Error al preparar la subida firmada:",
+      {
+        cardError:
+          cardResult.error,
+        displayError:
+          displayResult.error,
+      },
+    );
+
+    return {
+      ok: false as const,
+      error:
+        "No fue posible preparar la carga de la imagen.",
+    };
+  }
+
+  const cardUpload: SignedUploadData = {
+    path: paths.card,
+    token:
+      cardResult.data.token,
+  };
+
+  const displayUpload:
+    SignedUploadData = {
+      path: paths.display,
+      token:
+        displayResult.data.token,
+    };
+
+  return {
+    ok: true as const,
+    uploadId,
+    uploads: {
+      card: cardUpload,
+      display: displayUpload,
+    },
+  };
+}
+
+/*
+ * Segunda parte del flujo:
+ *
+ * Se ejecuta después de que el navegador haya subido
+ * card.webp y display.webp directamente a Storage.
+ */
+export async function finalizeRestaurantImageUpload(
+  imageKindValue: string,
+  uploadId: string,
+) {
+  const authContext =
+    await requireRestaurant();
+
+  if (
+    !isRestaurantImageKind(
+      imageKindValue,
+    ) ||
+    !isValidImageUploadId(
+      uploadId,
+    )
+  ) {
+    return {
+      ok: false as const,
+      error:
+        "La información de la imagen no es válida.",
+    };
+  }
+
+  const restaurantId =
+    authContext.restaurant.id;
+
+  const imageKind =
+    imageKindValue;
+
+  const paths =
+    buildRestaurantImagePaths({
+      restaurantId,
+      imageKind,
+      uploadId,
+    });
+
+  const supabase =
+    createAdminClient();
+
+  /*
+   * Confirmamos que las dos variantes realmente existen.
+   */
+  const directory =
+    `${restaurantId}/${imageKind}/${uploadId}`;
+
+  const {
+    data: uploadedFiles,
+    error: listError,
+  } = await supabase.storage
+    .from(IMAGE_BUCKET_NAME)
+    .list(directory, {
+      limit: 10,
+    });
+
+  const uploadedNames =
+    new Set(
+      uploadedFiles?.map(
+        (file) => file.name,
+      ) ?? [],
+    );
+
+  if (
+    listError ||
+    !uploadedNames.has("card.webp") ||
+    !uploadedNames.has("display.webp")
+  ) {
+    console.error(
+      "No se encontraron todas las variantes subidas:",
+      listError,
+    );
+
+    await supabase.storage
+      .from(IMAGE_BUCKET_NAME)
+      .remove([
+        paths.card,
+        paths.display,
+      ]);
+
+    return {
+      ok: false as const,
+      error:
+        "La carga no se completó correctamente. Inténtalo nuevamente.",
+    };
+  }
 
   const restaurant =
     await getRestaurantImages(
       restaurantId,
     );
 
-  const supabase = await createClient();
+  if (!restaurant) {
+    await supabase.storage
+      .from(IMAGE_BUCKET_NAME)
+      .remove([
+        paths.card,
+        paths.display,
+      ]);
 
-  const fileName =
-    `${imageKind}-${Date.now()}.${extension}`;
-
-  const storagePath =
-    `${restaurantId}/${fileName}`;
-
-  const {
-    error: uploadError,
-  } = await supabase.storage
-    .from(BUCKET_NAME)
-    .upload(
-      storagePath,
-      fileValue,
-      {
-        cacheControl: "3600",
-        contentType: fileValue.type,
-        upsert: false,
-      },
-    );
-
-  if (uploadError) {
-    console.error(
-      "Error al subir la imagen:",
-      uploadError,
-    );
-
-    redirectToImages(
-      "error",
-      "No fue posible subir la imagen. Inténtalo nuevamente.",
-    );
+    return {
+      ok: false as const,
+      error:
+        "No fue posible consultar el restaurante.",
+    };
   }
 
   const {
     data: publicUrlData,
   } = supabase.storage
-    .from(BUCKET_NAME)
-    .getPublicUrl(storagePath);
+    .from(IMAGE_BUCKET_NAME)
+    .getPublicUrl(
+      paths.display,
+    );
 
   const imageUrl =
     publicUrlData.publicUrl;
 
   const databaseColumn =
-    imageKind === "logo"
-      ? "logo_url"
-      : "cover_url";
+    getDatabaseColumn(imageKind);
 
   const previousImageUrl =
-    imageKind === "logo"
-      ? restaurant.logo_url
-      : restaurant.cover_url;
+    getCurrentImageUrl(
+      restaurant,
+      imageKind,
+    );
 
   const {
     error: updateError,
   } = await supabase
     .from("restaurants")
     .update({
-      [databaseColumn]: imageUrl,
+      [databaseColumn]:
+        imageUrl,
       updated_at:
         new Date().toISOString(),
     })
@@ -285,34 +377,43 @@ export async function uploadRestaurantImage(
 
   if (updateError) {
     console.error(
-      "Error al guardar la URL de la imagen:",
+      "Error al guardar la nueva imagen:",
       updateError,
     );
 
     await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([storagePath]);
+      .from(IMAGE_BUCKET_NAME)
+      .remove([
+        paths.card,
+        paths.display,
+      ]);
 
-    redirectToImages(
-      "error",
-      "La imagen se subió, pero no fue posible actualizar el restaurante.",
-    );
+    return {
+      ok: false as const,
+      error:
+        "Las imágenes se subieron, pero no fue posible actualizar el restaurante.",
+    };
   }
 
-  const previousStoragePath =
-    getStoragePathFromUrl(
+  /*
+   * La base ya apunta a la imagen nueva.
+   * Ahora es seguro eliminar las variantes anteriores.
+   */
+  const previousStoragePaths =
+    getStoragePathsFromPublicUrl(
       previousImageUrl,
     );
 
   if (
-    previousStoragePath &&
-    previousStoragePath !== storagePath
+    previousStoragePaths.length > 0
   ) {
     const {
       error: removePreviousError,
     } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([previousStoragePath]);
+      .from(IMAGE_BUCKET_NAME)
+      .remove(
+        previousStoragePaths,
+      );
 
     if (removePreviousError) {
       console.error(
@@ -326,12 +427,65 @@ export async function uploadRestaurantImage(
     restaurant.slug,
   );
 
-  redirectToImages(
-    "message",
-    imageKind === "logo"
-      ? "El logo se actualizó correctamente."
-      : "La portada se actualizó correctamente.",
-  );
+  return {
+    ok: true as const,
+    imageUrl,
+    message:
+      imageKind === "logo"
+        ? "El logo se optimizó y actualizó correctamente."
+        : "La portada se optimizó y actualizó correctamente.",
+  };
+}
+
+/*
+ * Limpia una carga incompleta si una de las dos
+ * variantes falla desde el navegador.
+ */
+export async function cancelRestaurantImageUpload(
+  imageKindValue: string,
+  uploadId: string,
+) {
+  const authContext =
+    await requireRestaurant();
+
+  if (
+    !isRestaurantImageKind(
+      imageKindValue,
+    ) ||
+    !isValidImageUploadId(
+      uploadId,
+    )
+  ) {
+    return;
+  }
+
+  const paths =
+    buildRestaurantImagePaths({
+      restaurantId:
+        authContext.restaurant.id,
+      imageKind:
+        imageKindValue,
+      uploadId,
+    });
+
+  const supabase =
+    createAdminClient();
+
+  const {
+    error,
+  } = await supabase.storage
+    .from(IMAGE_BUCKET_NAME)
+    .remove([
+      paths.card,
+      paths.display,
+    ]);
+
+  if (error) {
+    console.error(
+      "No fue posible limpiar la carga incompleta:",
+      error,
+    );
+  }
 }
 
 export async function deleteRestaurantImage(
@@ -341,7 +495,9 @@ export async function deleteRestaurantImage(
     await requireRestaurant();
 
   const imageKind =
-    getImageKind(formData);
+    getImageKindFromFormData(
+      formData,
+    );
 
   if (!imageKind) {
     redirectToImages(
@@ -358,10 +514,18 @@ export async function deleteRestaurantImage(
       restaurantId,
     );
 
+  if (!restaurant) {
+    redirectToImages(
+      "error",
+      "No fue posible consultar las imágenes actuales.",
+    );
+  }
+
   const currentImageUrl =
-    imageKind === "logo"
-      ? restaurant.logo_url
-      : restaurant.cover_url;
+    getCurrentImageUrl(
+      restaurant,
+      imageKind,
+    );
 
   if (!currentImageUrl) {
     redirectToImages(
@@ -373,11 +537,12 @@ export async function deleteRestaurantImage(
   }
 
   const databaseColumn =
-    imageKind === "logo"
-      ? "logo_url"
-      : "cover_url";
+    getDatabaseColumn(
+      imageKind,
+    );
 
-  const supabase = await createClient();
+  const supabase =
+    createAdminClient();
 
   const {
     error: updateError,
@@ -402,21 +567,21 @@ export async function deleteRestaurantImage(
     );
   }
 
-  const storagePath =
-    getStoragePathFromUrl(
+  const storagePaths =
+    getStoragePathsFromPublicUrl(
       currentImageUrl,
     );
 
-  if (storagePath) {
+  if (storagePaths.length > 0) {
     const {
       error: storageError,
     } = await supabase.storage
-      .from(BUCKET_NAME)
-      .remove([storagePath]);
+      .from(IMAGE_BUCKET_NAME)
+      .remove(storagePaths);
 
     if (storageError) {
       console.error(
-        "No fue posible eliminar el archivo de Storage:",
+        "No fue posible eliminar los archivos de Storage:",
         storageError,
       );
     }

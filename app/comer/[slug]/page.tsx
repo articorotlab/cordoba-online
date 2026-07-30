@@ -1,18 +1,21 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   Clock3,
   MapPin,
   Utensils,
 } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { PageContainer } from "@/components/layout/PageContainer";
 import { RestaurantTabs } from "@/components/restaurants/RestaurantTabs";
+import { getImageVariantUrl } from "@/lib/images/storage-url";
 import { getPublicRestaurantBySlug } from "@/lib/restaurants/queries";
 import { createClient } from "@/lib/supabase/server";
 
-import type { PublicRestaurantSchedule } from "@/types/public-restaurants";
+import type {
+  PublicRestaurantSchedule,
+} from "@/types/public-restaurants";
 
 type RestaurantPageProps = {
   params: Promise<{
@@ -30,74 +33,119 @@ const weekDayByJavaScriptDay = [
   "sábado",
 ] as const;
 
-function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(":").map(Number);
+function timeToMinutes(
+  time: string,
+): number {
+  const [
+    hours,
+    minutes,
+  ] = time
+    .split(":")
+    .map(Number);
 
   return hours * 60 + minutes;
 }
 
 function getMexicoCityDateParts() {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Mexico_City",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  });
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-US",
+      {
+        timeZone:
+          "America/Mexico_City",
+        weekday: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      },
+    );
 
-  const parts = formatter.formatToParts(new Date());
+  const parts =
+    formatter.formatToParts(
+      new Date(),
+    );
 
   const weekday =
-    parts.find((part) => part.type === "weekday")?.value ?? "";
+    parts.find(
+      (part) =>
+        part.type === "weekday",
+    )?.value ?? "";
 
   const hour = Number(
-    parts.find((part) => part.type === "hour")?.value ?? "0",
+    parts.find(
+      (part) =>
+        part.type === "hour",
+    )?.value ?? "0",
   );
 
   const minute = Number(
-    parts.find((part) => part.type === "minute")?.value ?? "0",
+    parts.find(
+      (part) =>
+        part.type === "minute",
+    )?.value ?? "0",
   );
 
-  const javascriptDayByShortName: Record<string, number> = {
-    Sun: 0,
-    Mon: 1,
-    Tue: 2,
-    Wed: 3,
-    Thu: 4,
-    Fri: 5,
-    Sat: 6,
-  };
+  const javascriptDayByShortName:
+    Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
 
   return {
-    day: javascriptDayByShortName[weekday] ?? 0,
-    currentMinutes: hour * 60 + minute,
+    day:
+      javascriptDayByShortName[
+        weekday
+      ] ?? 0,
+    currentMinutes:
+      hour * 60 + minute,
   };
 }
 
-function getPreviousDay(day: number): number {
-  return day === 0 ? 6 : day - 1;
+function getPreviousDay(
+  day: number,
+): number {
+  return day === 0
+    ? 6
+    : day - 1;
 }
 
 function getRestaurantOpenStatus(
-  schedule: PublicRestaurantSchedule[],
+  schedule:
+    PublicRestaurantSchedule[],
 ): {
   isOpen: boolean;
   statusLabel: string;
   scheduleLabel: string;
 } {
-  const { day, currentMinutes } = getMexicoCityDateParts();
+  const {
+    day,
+    currentMinutes,
+  } = getMexicoCityDateParts();
 
-  const currentDay = weekDayByJavaScriptDay[day];
+  const currentDay =
+    weekDayByJavaScriptDay[day];
+
   const previousDay =
-    weekDayByJavaScriptDay[getPreviousDay(day)];
+    weekDayByJavaScriptDay[
+      getPreviousDay(day)
+    ];
 
-  const todaySchedule = schedule.find(
-    (item) => item.day === currentDay,
-  );
+  const todaySchedule =
+    schedule.find(
+      (item) =>
+        item.day === currentDay,
+    );
 
-  const previousSchedule = schedule.find(
-    (item) => item.day === previousDay,
-  );
+  const previousSchedule =
+    schedule.find(
+      (item) =>
+        item.day === previousDay,
+    );
 
   if (
     previousSchedule &&
@@ -105,25 +153,31 @@ function getRestaurantOpenStatus(
     previousSchedule.opensAt &&
     previousSchedule.closesAt
   ) {
-    const previousOpeningMinutes = timeToMinutes(
-      previousSchedule.opensAt,
-    );
+    const previousOpeningMinutes =
+      timeToMinutes(
+        previousSchedule.opensAt,
+      );
 
-    const previousClosingMinutes = timeToMinutes(
-      previousSchedule.closesAt,
-    );
+    const previousClosingMinutes =
+      timeToMinutes(
+        previousSchedule.closesAt,
+      );
 
     const previousScheduleCrossesMidnight =
-      previousClosingMinutes < previousOpeningMinutes;
+      previousClosingMinutes <
+      previousOpeningMinutes;
 
     if (
       previousScheduleCrossesMidnight &&
-      currentMinutes < previousClosingMinutes
+      currentMinutes <
+        previousClosingMinutes
     ) {
       return {
         isOpen: true,
-        statusLabel: "Abierto ahora",
-        scheduleLabel: `Hasta ${previousSchedule.closesAt}`,
+        statusLabel:
+          "Abierto ahora",
+        scheduleLabel:
+          `Hasta ${previousSchedule.closesAt}`,
       };
     }
   }
@@ -137,25 +191,33 @@ function getRestaurantOpenStatus(
     return {
       isOpen: false,
       statusLabel: "Cerrado",
-      scheduleLabel: "Cerrado hoy",
+      scheduleLabel:
+        "Cerrado hoy",
     };
   }
 
-  const openingMinutes = timeToMinutes(
-    todaySchedule.opensAt,
-  );
+  const openingMinutes =
+    timeToMinutes(
+      todaySchedule.opensAt,
+    );
 
-  const closingMinutes = timeToMinutes(
-    todaySchedule.closesAt,
-  );
+  const closingMinutes =
+    timeToMinutes(
+      todaySchedule.closesAt,
+    );
 
   const crossesMidnight =
-    closingMinutes < openingMinutes;
+    closingMinutes <
+    openingMinutes;
 
-  const isOpen = crossesMidnight
-    ? currentMinutes >= openingMinutes
-    : currentMinutes >= openingMinutes &&
-      currentMinutes < closingMinutes;
+  const isOpen =
+    crossesMidnight
+      ? currentMinutes >=
+        openingMinutes
+      : currentMinutes >=
+          openingMinutes &&
+        currentMinutes <
+          closingMinutes;
 
   return {
     isOpen,
@@ -171,17 +233,23 @@ function getRestaurantOpenStatus(
 export default async function RestaurantPage({
   params,
 }: RestaurantPageProps) {
-  const { slug } = await params;
+  const { slug } =
+    await params;
 
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
 
   const [
     restaurant,
     {
-      data: { user },
+      data: {
+        user,
+      },
     },
   ] = await Promise.all([
-    getPublicRestaurantBySlug(slug),
+    getPublicRestaurantBySlug(
+      slug,
+    ),
     supabase.auth.getUser(),
   ]);
 
@@ -189,9 +257,22 @@ export default async function RestaurantPage({
     notFound();
   }
 
-  const openStatus = getRestaurantOpenStatus(
-    restaurant.schedule,
-  );
+  const openStatus =
+    getRestaurantOpenStatus(
+      restaurant.schedule,
+    );
+
+  const coverDisplayUrl =
+    getImageVariantUrl(
+      restaurant.cover,
+      "display",
+    );
+
+  const logoCardUrl =
+    getImageVariantUrl(
+      restaurant.logo,
+      "card",
+    );
 
   return (
     <>
@@ -199,11 +280,16 @@ export default async function RestaurantPage({
         <PageContainer className="py-6 sm:py-8">
           <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 shadow-xl shadow-slate-950/10">
             <div className="relative h-[24rem] sm:h-[30rem] lg:h-[34rem]">
-              {restaurant.cover ? (
+              {coverDisplayUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={restaurant.cover}
+                  src={
+                    coverDisplayUrl
+                  }
                   alt={`Portada de ${restaurant.name}`}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   className="absolute inset-0 size-full object-cover"
                 />
               ) : (
@@ -235,11 +321,17 @@ export default async function RestaurantPage({
 
               <div className="absolute inset-x-0 bottom-0 flex justify-center px-5 pb-8 sm:px-8 sm:pb-10">
                 <div className="flex size-40 items-center justify-center overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-2xl sm:size-48 lg:size-52">
-                  {restaurant.logo ? (
+                  {logoCardUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={restaurant.logo}
+                      src={
+                        logoCardUrl
+                      }
                       alt={`Logo de ${restaurant.name}`}
+                      width={256}
+                      height={256}
+                      loading="eager"
+                      decoding="async"
                       className="size-full object-contain"
                     />
                   ) : (
@@ -269,7 +361,9 @@ export default async function RestaurantPage({
 
                 {restaurant.description && (
                   <p className="mt-4 line-clamp-2 text-sm leading-6 text-slate-600 sm:text-base sm:leading-7">
-                    {restaurant.description}
+                    {
+                      restaurant.description
+                    }
                   </p>
                 )}
               </div>
@@ -293,7 +387,9 @@ export default async function RestaurantPage({
                     ].join(" ")}
                   />
 
-                  {openStatus.statusLabel}
+                  {
+                    openStatus.statusLabel
+                  }
                 </span>
 
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-700 sm:text-sm">
@@ -302,7 +398,9 @@ export default async function RestaurantPage({
                     className="size-3.5 shrink-0"
                   />
 
-                  {openStatus.scheduleLabel}
+                  {
+                    openStatus.scheduleLabel
+                  }
                 </span>
 
                 {restaurant.zone && (
@@ -312,7 +410,9 @@ export default async function RestaurantPage({
                       className="size-3.5 shrink-0"
                     />
 
-                    {restaurant.zone}
+                    {
+                      restaurant.zone
+                    }
                   </span>
                 )}
               </div>
@@ -325,7 +425,9 @@ export default async function RestaurantPage({
         <PageContainer className="py-6 sm:py-10">
           <RestaurantTabs
             restaurant={restaurant}
-            isAuthenticated={Boolean(user)}
+            isAuthenticated={
+              Boolean(user)
+            }
           />
         </PageContainer>
       </div>

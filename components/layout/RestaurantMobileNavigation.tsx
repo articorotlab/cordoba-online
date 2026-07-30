@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   ExternalLink,
+  Home,
   LayoutDashboard,
   Megaphone,
   Store,
@@ -13,6 +14,7 @@ import {
 type RestaurantMobileNavigationProps = {
   restaurantName: string;
   publicProfileHref: string;
+  onNavigate?: () => void;
 };
 
 type NavigationItem = {
@@ -23,6 +25,12 @@ type NavigationItem = {
 };
 
 const navigation: NavigationItem[] = [
+  {
+    label: "Inicio",
+    href: "/",
+    icon: Home,
+    exact: true,
+  },
   {
     label: "Administración",
     href: "/panel/restaurante",
@@ -44,6 +52,7 @@ const navigation: NavigationItem[] = [
 export function RestaurantMobileNavigation({
   restaurantName,
   publicProfileHref,
+  onNavigate,
 }: RestaurantMobileNavigationProps) {
   const pathname = usePathname();
 
@@ -52,10 +61,17 @@ export function RestaurantMobileNavigation({
     exact = false,
   ): boolean {
     if (exact) {
-      return (
-        pathname === "/panel" ||
-        pathname === href
-      );
+      if (
+        href ===
+        "/panel/restaurante"
+      ) {
+        return (
+          pathname === "/panel" ||
+          pathname === href
+        );
+      }
+
+      return pathname === href;
     }
 
     return (
@@ -65,7 +81,18 @@ export function RestaurantMobileNavigation({
   }
 
   const publicProfileActive =
-    pathname === publicProfileHref;
+    pathname === publicProfileHref ||
+    pathname.startsWith(
+      `${publicProfileHref}/`,
+    );
+
+  const homeItem = navigation[0];
+  const panelItems = navigation.slice(1);
+  const HomeIcon = homeItem.icon;
+  const homeActive = isActive(
+    homeItem.href,
+    homeItem.exact,
+  );
 
   return (
     <div className="space-y-3">
@@ -90,7 +117,71 @@ export function RestaurantMobileNavigation({
         </div>
       </div>
 
-      {navigation.map((item) => {
+      <Link
+        href={homeItem.href}
+        onClick={onNavigate}
+        aria-current={
+          homeActive ? "page" : undefined
+        }
+        className={[
+          "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all",
+          homeActive
+            ? "border-slate-950 bg-slate-950 text-white shadow-lg shadow-slate-950/15"
+            : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "flex size-9 shrink-0 items-center justify-center rounded-xl",
+            homeActive
+              ? "bg-white/10 text-white"
+              : "bg-slate-100 text-slate-500",
+          ].join(" ")}
+        >
+          <HomeIcon
+            aria-hidden="true"
+            className="size-[18px]"
+          />
+        </span>
+
+        {homeItem.label}
+      </Link>
+
+      <Link
+        href={publicProfileHref}
+        onClick={onNavigate}
+        aria-current={
+          publicProfileActive
+            ? "page"
+            : undefined
+        }
+        className={[
+          "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all",
+          publicProfileActive
+            ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+            : "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100",
+        ].join(" ")}
+      >
+        <span
+          className={[
+            "flex size-9 shrink-0 items-center justify-center rounded-xl",
+            publicProfileActive
+              ? "bg-white/10 text-white"
+              : "bg-blue-100 text-blue-600",
+          ].join(" ")}
+        >
+          <ExternalLink
+            aria-hidden="true"
+            className="size-[18px]"
+          />
+        </span>
+
+        Ver perfil público
+      </Link>
+
+      <div className="my-4 border-t border-slate-200" />
+
+      {panelItems.map((item) => {
         const Icon = item.icon;
 
         const active = isActive(
@@ -102,14 +193,15 @@ export function RestaurantMobileNavigation({
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={
               active ? "page" : undefined
             }
             className={[
               "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all",
               active
-                ? "border-slate-950 bg-slate-950 text-white shadow-lg shadow-slate-950/15"
-                : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-950",
+                ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700",
             ].join(" ")}
           >
             <span
@@ -130,39 +222,6 @@ export function RestaurantMobileNavigation({
           </Link>
         );
       })}
-
-      <div className="pt-1">
-        <Link
-          href={publicProfileHref}
-          aria-current={
-            publicProfileActive
-              ? "page"
-              : undefined
-          }
-          className={[
-            "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all",
-            publicProfileActive
-              ? "border-blue-700 bg-blue-700 text-white shadow-lg shadow-blue-600/20"
-              : "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100",
-          ].join(" ")}
-        >
-          <span
-            className={[
-              "flex size-9 shrink-0 items-center justify-center rounded-xl",
-              publicProfileActive
-                ? "bg-white/10 text-white"
-                : "bg-blue-100 text-blue-600",
-            ].join(" ")}
-          >
-            <ExternalLink
-              aria-hidden="true"
-              className="size-[18px]"
-            />
-          </span>
-
-          Ver perfil público
-        </Link>
-      </div>
     </div>
   );
 }

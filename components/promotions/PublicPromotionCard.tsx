@@ -3,6 +3,7 @@ import {
   ArrowRight,
   CalendarDays,
   Clock3,
+  LockKeyhole,
   MapPin,
   Tag,
 } from "lucide-react";
@@ -17,6 +18,7 @@ import type {
 type PublicPromotionCardProps = {
   promotion: PublicRestaurantPromotion;
   restaurant: PublicRestaurant;
+  locked?: boolean;
 };
 
 function formatDay(day: string): string {
@@ -33,13 +35,18 @@ function formatPromotionDays(
     return "Consulta disponibilidad";
   }
 
-  return promotion.days.map(formatDay).join(", ");
+  return promotion.days
+    .map(formatDay)
+    .join(", ");
 }
 
 function formatPromotionHours(
   promotion: PublicRestaurantPromotion,
 ): string | null {
-  if (!promotion.startTime || !promotion.endTime) {
+  if (
+    !promotion.startTime ||
+    !promotion.endTime
+  ) {
     return null;
   }
 
@@ -49,12 +56,79 @@ function formatPromotionHours(
 export function PublicPromotionCard({
   promotion,
   restaurant,
+  locked = false,
 }: PublicPromotionCardProps) {
   const promotionHours =
     formatPromotionHours(promotion);
 
   const formattedPrice =
     formatPromotionPrice(promotion.price);
+
+  if (locked) {
+    return (
+      <article className="group grid h-[31rem] min-w-0 grid-rows-[72%_28%] overflow-hidden rounded-[1.5rem] border border-orange-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:h-[34rem] sm:rounded-[2rem]">
+        <div className="relative flex min-h-0 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600">
+          {promotion.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={promotion.image}
+              alt={`Promoción de ${restaurant.name}`}
+              className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
+          ) : (
+            <Tag
+              aria-hidden="true"
+              className="size-12 text-white/90 transition-transform duration-300 group-hover:rotate-6 group-hover:scale-110 sm:size-16"
+            />
+          )}
+
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/10" />
+
+          <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-slate-950/75 px-3 py-1.5 text-xs font-extrabold text-white shadow-lg shadow-slate-950/20 backdrop-blur-md sm:px-4 sm:py-2 sm:text-sm">
+              <LockKeyhole
+                aria-hidden="true"
+                className="size-3.5"
+              />
+
+              Promoción
+            </span>
+          </div>
+
+          <div className="absolute inset-x-3 bottom-3 min-w-0 sm:inset-x-5 sm:bottom-5">
+            <p className="truncate text-xs font-bold text-white sm:text-sm">
+              {restaurant.name}
+            </p>
+
+            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-white/85 sm:text-xs">
+              <MapPin
+                aria-hidden="true"
+                className="size-3 shrink-0 sm:size-3.5"
+              />
+
+              <span className="truncate">
+                {restaurant.zone}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex min-h-0 items-center p-3 sm:p-5">
+          <Link
+            href="/login?redirect=%2Fcomer"
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+          >
+            <LockKeyhole
+              aria-hidden="true"
+              className="size-4"
+            />
+
+            Inicia sesión gratis
+          </Link>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <Link
@@ -130,7 +204,9 @@ export function PublicPromotionCard({
             />
 
             <span className="truncate">
-              {formatPromotionDays(promotion)}
+              {formatPromotionDays(
+                promotion,
+              )}
             </span>
           </span>
 

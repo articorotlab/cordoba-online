@@ -3,22 +3,13 @@ import {
   LayoutDashboard,
   LogIn,
   LogOut,
-  Menu,
   Store,
   UserRound,
 } from "lucide-react";
 
 import { logout } from "@/app/auth/actions";
-import { RestaurantMobileNavigation } from "@/components/layout/RestaurantMobileNavigation";
+import { HeaderMobileMenu } from "@/components/layout/HeaderMobileMenu";
 import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import { createClient } from "@/lib/supabase/server";
 
 import { PageContainer } from "./PageContainer";
@@ -174,6 +165,13 @@ export async function Header() {
               aria-label="Navegación principal"
               className="hidden items-center gap-1 lg:flex"
             >
+              <Link
+                href="/"
+                className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950"
+              >
+                Inicio
+              </Link>
+
               {visibleNavigation.map(
                 (item) =>
                   item.available ? (
@@ -248,138 +246,26 @@ export async function Header() {
               </Link>
             )}
 
-            <Sheet>
-              <SheetTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="rounded-xl lg:hidden"
-                    aria-label="Abrir menú"
-                  />
-                }
-              >
-                <Menu className="size-5" />
-              </SheetTrigger>
-
-              <SheetContent
-                side="right"
-                className="w-[88%] max-w-sm"
-              >
-                <SheetHeader>
-                  <SheetTitle>
-                    cordoba
-                    <span className="text-blue-600">
-                      .online
-                    </span>
-                  </SheetTitle>
-
-                  <SheetDescription>
-                    {isRestaurant
-                      ? "Administra el contenido de tu restaurante."
-                      : "Descubre todo lo que Córdoba tiene para ti."}
-                  </SheetDescription>
-                </SheetHeader>
-
-                <nav
-                  aria-label="Navegación móvil"
-                  className="flex flex-col px-4"
-                >
-                  {isRestaurant &&
-                  restaurant ? (
-                    <>
-                      <RestaurantMobileNavigation
-                        restaurantName={
-                          restaurant.name
-                        }
-                        publicProfileHref={
-                          publicProfileHref
-                        }
-                      />
-
-                      <div className="mt-6 border-t border-slate-200 pt-5">
-                        <form action={logout}>
-                          <Button
-                            type="submit"
-                            variant="outline"
-                            className="h-12 w-full rounded-2xl border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <LogOut className="size-4" />
-
-                            Cerrar sesión
-                          </Button>
-                        </form>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex flex-col gap-2">
-                        {visibleNavigation.map(
-                          (item) =>
-                            item.available ? (
-                              <Link
-                                key={
-                                  item.label
-                                }
-                                href={
-                                  item.href
-                                }
-                                className="rounded-2xl border border-slate-200 px-4 py-4 text-base font-semibold text-slate-950 transition-colors hover:border-orange-200 hover:bg-orange-50"
-                              >
-                                {
-                                  item.label
-                                }
-                              </Link>
-                            ) : (
-                              <div
-                                key={
-                                  item.label
-                                }
-                                className="flex items-center justify-between rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-4"
-                              >
-                                <span className="font-semibold text-slate-600">
-                                  {
-                                    item.label
-                                  }
-                                </span>
-
-                                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-600 shadow-sm">
-                                  Próximamente
-                                </span>
-                              </div>
-                            ),
-                        )}
-                      </div>
-
-                      <div className="mt-6 border-t border-slate-200 pt-5">
-                        {isAuthenticated ? (
-                          <form action={logout}>
-                            <Button
-                              type="submit"
-                              variant="outline"
-                              className="h-12 w-full rounded-2xl border-red-200 text-red-600 hover:border-red-300 hover:bg-red-50 hover:text-red-700"
-                            >
-                              <LogOut className="size-4" />
-
-                              Cerrar sesión
-                            </Button>
-                          </form>
-                        ) : (
-                          <Link
-                            href="/login"
-                            className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white transition-colors hover:bg-blue-700"
-                          >
-                            <LogIn className="size-4" />
-
-                            Acceder
-                          </Link>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </nav>
-              </SheetContent>
-            </Sheet>
+            <HeaderMobileMenu
+              isAuthenticated={
+                isAuthenticated
+              }
+              isRestaurant={isRestaurant}
+              restaurantName={
+                restaurant?.name ?? null
+              }
+              publicProfileHref={
+                publicProfileHref
+              }
+              navigation={visibleNavigation.map(
+                (item) => ({
+                  label: item.label,
+                  href: item.href,
+                  available:
+                    item.available,
+                }),
+              )}
+            />
           </div>
         </div>
       </PageContainer>

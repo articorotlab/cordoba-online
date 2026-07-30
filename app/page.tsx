@@ -1,15 +1,25 @@
-import Link from "next/link";
 import {
   Flame,
   MapPin,
   Sparkles,
 } from "lucide-react";
+
 import { CategoryGrid } from "@/components/home/CategoryGrid";
+import { HomeQuickAction } from "@/components/home/HomeQuickAction";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Badge } from "@/components/ui/badge";
+import { getHomeStats } from "@/lib/home/get-home-stats";
 
-export default function HomePage() {
-  const promotionsToday = 38;
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  /*
+   * Este valor se consulta dinámicamente.
+   *
+   * promotionsToday contiene únicamente la cantidad
+   * real de promociones válidas para el día actual.
+   */
+  const homeStats = await getHomeStats();
 
   return (
     <>
@@ -39,6 +49,7 @@ export default function HomePage() {
                 aria-hidden="true"
                 className="mr-2 size-4"
               />
+
               Descubre Córdoba
             </Badge>
 
@@ -50,36 +61,30 @@ export default function HomePage() {
               , en un solo lugar
             </h1>
 
-            <div className="mx-auto mt-7 grid w-full max-w-md grid-cols-2 gap-3">
-              <Link
-                href="/promociones"
-                className="group inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-orange-600 px-3 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-orange-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 sm:px-5 sm:text-base"
-              >
-                <Flame
-                  aria-hidden="true"
-                  className="size-5 shrink-0 transition-transform group-hover:scale-110"
-                />
+            <div className="mx-auto mt-7 grid w-full max-w-lg grid-cols-2 gap-3">
+              <HomeQuickAction
+                href="/comer"
+                icon={
+                  <Flame aria-hidden="true" />
+                }
+                count={
+                  homeStats.promotionsToday
+                }
+                singular="promo"
+                plural="promos"
+                suffix="para comer hoy"
+                variant="orange"
+              />
 
-                <span className="truncate">
-                  {promotionsToday > 0
-                    ? `${promotionsToday} promos hoy`
-                    : "Promociones"}
-                </span>
-              </Link>
-
-              <Link
-                href="/explorar"
-                className="inline-flex h-14 min-w-0 items-center justify-center gap-2 rounded-2xl bg-slate-950 px-3 text-sm font-semibold text-white shadow-lg shadow-slate-950/10 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 sm:px-5 sm:text-base"
-              >
-                <MapPin
-                  aria-hidden="true"
-                  className="size-5 shrink-0"
-                />
-
-                <span className="truncate">
-                  Explorar
-                </span>
-              </Link>
+              <HomeQuickAction
+                icon={
+                  <MapPin aria-hidden="true" />
+                }
+                label="Explorar"
+                variant="dark"
+                disabled
+                title="Próximamente"
+              />
             </div>
           </div>
         </PageContainer>

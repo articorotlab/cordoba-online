@@ -57,6 +57,39 @@ function buildLoginRedirect(
   return `/login?${params.toString()}`;
 }
 
+function buildEmailConfirmationRedirect(
+  redirectTo: string,
+) {
+  const params = new URLSearchParams({
+    confirmation: "required",
+    redirect: redirectTo,
+  });
+
+  return `/login?${params.toString()}`;
+}
+
+function isEmailNotConfirmedError(
+  error: {
+    code?: string;
+    message?: string;
+  } | null,
+): boolean {
+  if (!error) {
+    return false;
+  }
+
+  if (error.code === "email_not_confirmed") {
+    return true;
+  }
+
+  return (
+    error.message
+      ?.toLocaleLowerCase("en-US")
+      .includes("email not confirmed") ??
+    false
+  );
+}
+
 async function getPostLoginPath(
   userId: string,
   requestedPath: string,
@@ -146,6 +179,16 @@ export async function login(
       email,
       password,
     });
+
+  if (isEmailNotConfirmedError(error)) {
+    redirect(
+      buildLoginRedirect(
+        "error",
+        "Tu correo todavía no ha sido confirmado. Revisa tu bandeja de entrada y abre el enlace de confirmación para activar tu cuenta.",
+        requestedPath,
+      ),
+    );
+  }
 
   if (
     error ||
@@ -282,16 +325,23 @@ export async function register(
 
   revalidatePath("/", "layout");
 
+  /*
+   * Si Supabase crea una sesión inmediatamente,
+   * significa que la confirmación por correo no es
+   * obligatoria y podemos continuar normalmente.
+   */
   if (data.session) {
     redirect(redirectTo);
   }
 
+  /*
+   * Si no existe una sesión, la cuenta fue creada,
+   * pero el usuario debe confirmar su correo.
+   */
   redirect(
-    `/login?message=${encodeURIComponent(
-      "Cuenta creada. Revisa tu correo para confirmar tu cuenta.",
-    )}&redirect=${encodeURIComponent(
+    buildEmailConfirmationRedirect(
       redirectTo,
-    )}`,
+    ),
   );
 }
 

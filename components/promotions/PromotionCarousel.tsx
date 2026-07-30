@@ -10,11 +10,13 @@ import type { PublicPromotionWithRestaurant } from "@/lib/restaurants/public-uti
 
 type PromotionCarouselProps = {
   promotions: PublicPromotionWithRestaurant[];
+  locked?: boolean;
   showViewAllCard?: boolean;
 };
 
 export function PromotionCarousel({
   promotions,
+  locked = false,
   showViewAllCard = false,
 }: PromotionCarouselProps) {
   if (promotions.length === 0) {
@@ -63,6 +65,7 @@ export function PromotionCarousel({
               <PublicPromotionCard
                 promotion={promotion}
                 restaurant={restaurant}
+                locked={locked}
               />
             </div>
           ),

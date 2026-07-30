@@ -1,7 +1,9 @@
 import Link from "next/link";
 import {
   ArrowLeft,
+  CircleCheck,
   LockKeyhole,
+  MailCheck,
   UserRound,
 } from "lucide-react";
 
@@ -12,6 +14,7 @@ import { Input } from "@/components/ui/input";
 
 type LoginPageProps = {
   searchParams: Promise<{
+    confirmation?: string;
     error?: string;
     message?: string;
     redirect?: string;
@@ -22,6 +25,7 @@ export default async function LoginPage({
   searchParams,
 }: LoginPageProps) {
   const {
+    confirmation,
     error,
     message,
     redirect: redirectTo,
@@ -33,6 +37,9 @@ export default async function LoginPage({
     !redirectTo.startsWith("//")
       ? redirectTo
       : "/comer";
+
+  const confirmationRequired =
+    confirmation === "required";
 
   return (
     <PageContainer className="py-10 sm:py-16">
@@ -70,19 +77,61 @@ export default async function LoginPage({
           </div>
 
           <div className="p-6 sm:p-8">
+            {confirmationRequired && (
+              <div
+                role="status"
+                className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-4"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-600 shadow-sm">
+                    <MailCheck
+                      aria-hidden="true"
+                      className="size-5"
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="font-bold text-slate-950">
+                      Confirma tu correo electrónico
+                    </p>
+
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      Tu cuenta fue creada correctamente.
+                      Enviamos un enlace de confirmación a
+                      tu correo electrónico.
+                    </p>
+
+                    <p className="mt-2 text-sm font-semibold leading-6 text-blue-700">
+                      Abre el enlace recibido para activar
+                      tu cuenta antes de iniciar sesión.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {message && (
               <div
                 role="status"
-                className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700"
+                className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
               >
-                {message}
+                <div className="flex items-start gap-3">
+                  <CircleCheck
+                    aria-hidden="true"
+                    className="mt-0.5 size-5 shrink-0 text-emerald-600"
+                  />
+
+                  <p className="text-sm font-medium leading-6 text-emerald-700">
+                    {message}
+                  </p>
+                </div>
               </div>
             )}
 
             {error && (
               <div
                 role="alert"
-                className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+                className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium leading-6 text-red-700"
               >
                 {error}
               </div>
