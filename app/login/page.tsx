@@ -35,8 +35,8 @@ export default async function LoginPage({
     typeof redirectTo === "string" &&
     redirectTo.startsWith("/") &&
     !redirectTo.startsWith("//")
-      ? redirectTo
-      : "/comer";
+        ? redirectTo
+        : "/";
 
   const confirmationRequired =
     confirmation === "required";
@@ -45,16 +45,18 @@ export default async function LoginPage({
     <PageContainer className="py-10 sm:py-16">
       <div className="mx-auto max-w-md">
         <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition-colors hover:text-slate-950"
-        >
-          <ArrowLeft
-            aria-hidden="true"
-            className="size-4"
-          />
+            href={safeRedirect}
+            className="group inline-flex h-11 items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 text-sm font-bold text-orange-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+            >
+            <span className="flex size-7 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:-translate-x-0.5">
+                <ArrowLeft
+                aria-hidden="true"
+                className="size-4"
+                />
+            </span>
 
-          Volver al inicio
-        </Link>
+            Volver
+          </Link>
 
         <div className="mt-8 overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 bg-gradient-to-br from-blue-50 via-white to-orange-50 px-6 py-8 sm:px-8">

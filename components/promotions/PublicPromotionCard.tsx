@@ -66,8 +66,8 @@ export function PublicPromotionCard({
 
   if (locked) {
     return (
-      <article className="group grid h-[31rem] min-w-0 grid-rows-[72%_28%] overflow-hidden rounded-[1.5rem] border border-orange-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:h-[34rem] sm:rounded-[2rem]">
-        <div className="relative flex min-h-0 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600">
+      <article className="group flex h-[33rem] min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-orange-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:h-[35rem] sm:rounded-[2rem]">
+        <div className="relative flex h-[21rem] shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 sm:h-[23rem]">
           {promotion.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -82,7 +82,7 @@ export function PublicPromotionCard({
             />
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/35 via-transparent to-slate-950/10" />
 
           <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-white/35 bg-slate-950/75 px-3 py-1.5 text-xs font-extrabold text-white shadow-lg shadow-slate-950/20 backdrop-blur-md sm:px-4 sm:py-2 sm:text-sm">
@@ -94,16 +94,18 @@ export function PublicPromotionCard({
               Promoción
             </span>
           </div>
+        </div>
 
-          <div className="absolute inset-x-3 bottom-3 min-w-0 sm:inset-x-5 sm:bottom-5">
-            <p className="truncate text-xs font-bold text-white sm:text-sm">
+        <div className="flex flex-1 flex-col p-4 sm:p-5">
+          <div className="min-w-0">
+            <p className="truncate text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">
               {restaurant.name}
             </p>
 
-            <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-white/85 sm:text-xs">
+            <p className="mt-1.5 flex min-w-0 items-center gap-1.5 text-xs font-semibold text-slate-500 sm:text-sm">
               <MapPin
                 aria-hidden="true"
-                className="size-3 shrink-0 sm:size-3.5"
+                className="size-3.5 shrink-0 text-orange-500"
               />
 
               <span className="truncate">
@@ -111,19 +113,21 @@ export function PublicPromotionCard({
               </span>
             </p>
           </div>
-        </div>
 
-        <div className="flex min-h-0 items-center p-3 sm:p-5">
+          <div className="my-2 border-t border-slate-100" />
+
           <Link
             href="/login?redirect=%2Fcomer"
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
+            className="mt-auto inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 text-center text-sm font-bold leading-5 text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
           >
             <LockKeyhole
               aria-hidden="true"
-              className="size-4"
+              className="size-4 shrink-0"
             />
 
-            Inicia sesión gratis
+            <span>
+              Inicia sesión para ver la promoción completa
+            </span>
           </Link>
         </div>
       </article>
@@ -133,9 +137,9 @@ export function PublicPromotionCard({
   return (
     <Link
       href={`/comer/${restaurant.slug}`}
-      className="group grid h-[31rem] min-w-0 grid-rows-[72%_28%] overflow-hidden rounded-[1.5rem] border border-orange-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:h-[34rem] sm:rounded-[2rem]"
+      className="group flex h-[33rem] min-w-0 flex-col overflow-hidden rounded-[1.5rem] border border-orange-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl sm:h-[35rem] sm:rounded-[2rem]"
     >
-      <div className="relative flex min-h-0 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600">
+      <div className="relative flex h-[19rem] shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 sm:h-[21rem]">
         {promotion.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -150,7 +154,7 @@ export function PublicPromotionCard({
           />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-slate-950/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-slate-950/10" />
 
         {formattedPrice && (
           <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
@@ -159,16 +163,18 @@ export function PublicPromotionCard({
             </span>
           </div>
         )}
+      </div>
 
-        <div className="absolute inset-x-3 bottom-3 min-w-0 sm:inset-x-5 sm:bottom-5">
-          <p className="truncate text-xs font-bold text-white sm:text-sm">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="min-w-0">
+          <p className="truncate text-lg font-extrabold tracking-tight text-slate-950 sm:text-xl">
             {restaurant.name}
           </p>
 
-          <p className="mt-1 flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-white/85 sm:text-xs">
+          <p className="mt-1 flex min-w-0 items-center gap-1.5 text-xs font-semibold text-slate-500 sm:text-sm">
             <MapPin
               aria-hidden="true"
-              className="size-3 shrink-0 sm:size-3.5"
+              className="size-3.5 shrink-0 text-orange-500"
             />
 
             <span className="truncate">
@@ -176,27 +182,27 @@ export function PublicPromotionCard({
             </span>
           </p>
         </div>
-      </div>
 
-      <div className="flex min-h-0 flex-col p-3 sm:p-5">
-        <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-4">
-          <h3 className="line-clamp-2 min-w-0 text-base font-bold leading-tight tracking-tight text-slate-950 sm:text-xl">
+        <div className="my-3 border-t border-slate-100" />
+
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          <h3 className="line-clamp-2 min-w-0 text-base font-bold leading-tight tracking-tight text-slate-950 sm:text-lg">
             {promotion.title}
           </h3>
 
           <ArrowRight
             aria-hidden="true"
-            className="mt-0.5 size-4 shrink-0 text-slate-400 transition-all duration-300 group-hover:translate-x-1 group-hover:text-orange-600 sm:mt-1 sm:size-5"
+            className="mt-0.5 size-4 shrink-0 text-slate-400 transition-all duration-300 group-hover:translate-x-1 group-hover:text-orange-600 sm:size-5"
           />
         </div>
 
         {promotion.description && (
-          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600 sm:mt-3 sm:text-sm sm:leading-6">
+          <p className="mt-1.5 line-clamp-1 text-xs leading-5 text-slate-600 sm:text-sm">
             {promotion.description}
           </p>
         )}
 
-        <div className="mt-auto flex min-w-0 flex-wrap gap-1.5 pt-2 sm:gap-2 sm:pt-3">
+        <div className="mt-auto flex min-w-0 flex-wrap gap-1.5 pt-2 sm:gap-2">
           <span className="inline-flex max-w-full items-center gap-1.5 rounded-full bg-orange-50 px-2 py-1 text-[10px] font-semibold text-orange-700 sm:gap-2 sm:px-3 sm:py-1.5 sm:text-xs">
             <CalendarDays
               aria-hidden="true"

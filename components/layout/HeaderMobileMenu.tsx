@@ -259,10 +259,10 @@ export function HeaderMobileMenu({
                   </form>
                 ) : (
                   <Link
-                    href="/login"
+                     href={`/login?redirect=${encodeURIComponent(pathname)}`}
                     onClick={closeMenu}
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 text-sm font-bold text-white transition-colors hover:bg-blue-700"
-                  >
+                    >
                     <LogIn className="size-4" />
 
                     Acceder

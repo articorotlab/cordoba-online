@@ -55,12 +55,12 @@ export function PromotionCarousel({
 
   return (
     <div className="relative">
-      <div className="-mx-4 flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto px-4 pb-5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6 lg:mx-0 lg:grid lg:grid-cols-3 lg:overflow-visible lg:px-0">
+      <div className="flex snap-x snap-mandatory items-stretch gap-4 overflow-x-auto pb-5 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-5 sm:pr-6 lg:grid lg:grid-cols-3 lg:overflow-visible lg:pr-0">
         {promotions.map(
           ({ promotion, restaurant }) => (
             <div
               key={promotion.id}
-              className="w-[85%] shrink-0 snap-start sm:w-[55%] lg:w-auto"
+              className="w-[86%] shrink-0 snap-start sm:w-[55%] lg:w-auto"
             >
               <PublicPromotionCard
                 promotion={promotion}
@@ -72,11 +72,11 @@ export function PromotionCarousel({
         )}
 
         {showViewAllCard && (
-          <div className="w-[85%] shrink-0 snap-start sm:w-[55%] lg:w-auto">
+          <div className="w-[86%] shrink-0 snap-start sm:w-[55%] lg:w-auto">
             <Link
               href="/promociones"
               aria-label="Ver todas las promociones disponibles"
-              className="group relative flex h-[31rem] min-w-0 flex-col justify-between overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 p-6 text-white shadow-lg shadow-orange-500/20 transition-[box-shadow,background-color] duration-200 hover:shadow-xl hover:shadow-orange-500/30 sm:h-[34rem] sm:rounded-[2rem] sm:p-8"
+              className="group relative flex h-[33rem] min-w-0 flex-col justify-between overflow-hidden rounded-[1.5rem] bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600 p-6 text-white shadow-lg shadow-orange-500/20 transition-[box-shadow,background-color] duration-200 hover:shadow-xl hover:shadow-orange-500/30 sm:h-[35rem] sm:rounded-[2rem] sm:p-8"
             >
               <div
                 aria-hidden="true"

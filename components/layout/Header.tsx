@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   LayoutDashboard,
-  LogIn,
   LogOut,
   Store,
   UserRound,
@@ -9,6 +8,7 @@ import {
 
 import { logout } from "@/app/auth/actions";
 import { HeaderMobileMenu } from "@/components/layout/HeaderMobileMenu";
+import { LoginButton } from "@/components/layout/LoginButton";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
@@ -268,14 +268,7 @@ export async function Header() {
                 </form>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="hidden h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white transition-colors hover:bg-blue-700 lg:inline-flex"
-              >
-                <LogIn className="size-4" />
-
-                Acceder
-              </Link>
+              <LoginButton />
             )}
 
               <HeaderMobileMenu

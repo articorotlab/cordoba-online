@@ -311,11 +311,11 @@ export default async function RestaurantPage({
               <Link
                 href="/comer"
                 aria-label="Volver a restaurantes"
-                className="absolute left-4 top-4 z-10 flex size-11 items-center justify-center rounded-full border border-white/20 bg-slate-950/40 text-white shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-950/60 sm:left-6 sm:top-6"
-              >
+                className="absolute left-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-orange-500 text-white shadow-xl shadow-orange-950/30 transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 sm:left-6 sm:top-6"
+                >
                 <ArrowLeft
-                  aria-hidden="true"
-                  className="size-5"
+                    aria-hidden="true"
+                    className="size-5"
                 />
               </Link>
 
