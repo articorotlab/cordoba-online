@@ -157,12 +157,18 @@ export function PublicPromotionCard({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-slate-950/10" />
 
         {formattedPrice && (
-          <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
-            <span className="inline-flex items-center rounded-full border border-white/40 bg-emerald-500 px-3 py-1.5 text-sm font-extrabold text-white shadow-lg shadow-slate-950/20 backdrop-blur-md sm:px-4 sm:py-2 sm:text-base">
-              {formattedPrice}
-            </span>
-          </div>
-        )}
+            <div className="absolute right-3 top-3 sm:right-4 sm:top-4">
+                <div className="flex min-w-[5.75rem] flex-col items-center rounded-[1.25rem] border border-white/70 bg-white/95 px-4 py-3 text-center shadow-xl shadow-slate-950/20 backdrop-blur-md sm:min-w-[6.5rem] sm:rounded-[1.5rem] sm:px-5 sm:py-4">
+                <span className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-slate-500 sm:text-xs">
+                    Desde
+                </span>
+
+                <span className="mt-0.5 text-2xl font-black leading-none tracking-tight text-emerald-500 sm:text-3xl">
+                    {formattedPrice}
+                </span>
+                </div>
+            </div>
+)}
       </div>
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
