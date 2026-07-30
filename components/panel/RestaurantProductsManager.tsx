@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  ImageIcon,
   LoaderCircle,
   Plus,
   Save,
@@ -17,17 +16,20 @@ import {
 import Image from "next/image";
 import {
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
-  createProduct,
   deleteProduct,
   toggleProductFeatured,
-  updateProduct,
 } from "@/app/panel/restaurante/platillos/actions";
+import {
+  CreateProductForm,
+} from "@/components/panel/CreateProductForm";
+import {
+  EditProductForm,
+} from "@/components/panel/EditProductForm";
 
 type RestaurantProduct = {
   id: string;
@@ -56,9 +58,6 @@ type SubmitButtonProps = {
   className?: string;
   disabled?: boolean;
 };
-
-const inputClassName =
-  "min-h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100";
 
 function FeedbackMessage({
   type,
@@ -140,84 +139,6 @@ function SubmitButton({
         </>
       )}
     </button>
-  );
-}
-
-function ProductImageInput({
-  id,
-}: {
-  id: string;
-}) {
-  const inputRef =
-    useRef<HTMLInputElement>(null);
-
-  const [
-    selectedFile,
-    setSelectedFile,
-  ] = useState<File | null>(null);
-
-  return (
-    <div className="space-y-3">
-      <input
-        ref={inputRef}
-        id={id}
-        name="image"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        onChange={(event) => {
-          setSelectedFile(
-            event.target.files?.[0] ??
-              null,
-          );
-        }}
-        className="sr-only"
-      />
-
-      <label
-        htmlFor={id}
-        className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-      >
-        <ImageIcon className="size-5" />
-
-        {selectedFile
-          ? "Cambiar imagen seleccionada"
-          : "Seleccionar imagen"}
-      </label>
-
-      {selectedFile && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-orange-900">
-              {selectedFile.name}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-orange-700">
-              {(
-                selectedFile.size /
-                1024 /
-                1024
-              ).toFixed(2)}{" "}
-              MB
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFile(null);
-
-              if (inputRef.current) {
-                inputRef.current.value =
-                  "";
-              }
-            }}
-            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100"
-          >
-            Quitar
-          </button>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -355,88 +276,9 @@ function ProductCard({
 
         {editing && (
           <div className="border-t border-neutral-100 pt-5">
-            <form
-              action={updateProduct}
-              className="space-y-4"
-            >
-              <input
-                type="hidden"
-                name="productId"
-                value={product.id}
-              />
-
-              <div className="space-y-2">
-                <label
-                  htmlFor={`name-${product.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Nombre
-                </label>
-
-                <input
-                  id={`name-${product.id}`}
-                  name="name"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  defaultValue={product.name}
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor={`price-${product.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Precio
-                </label>
-
-                <input
-                  id={`price-${product.id}`}
-                  name="price"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="999999"
-                  step="0.01"
-                  required
-                  defaultValue={product.price}
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor={`description-${product.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Descripción
-                </label>
-
-                <textarea
-                  id={`description-${product.id}`}
-                  name="description"
-                  rows={4}
-                  maxLength={500}
-                  defaultValue={
-                    product.description
-                  }
-                  className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                />
-              </div>
-
-              <ProductImageInput
-                id={`image-${product.id}`}
-              />
-
-              <SubmitButton
-                label="Guardar cambios"
-                pendingLabel="Guardando..."
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-            </form>
+            <EditProductForm
+              product={product}
+            />
 
             <form
               action={deleteProduct}
@@ -576,87 +418,7 @@ export function RestaurantProductsManager({
           </button>
 
           {showCreateForm && (
-            <form
-              action={createProduct}
-              className="mt-6 grid gap-5 rounded-2xl border border-neutral-200 bg-neutral-50 p-5 lg:grid-cols-2"
-            >
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-product-name"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Nombre del platillo
-                </label>
-
-                <input
-                  id="new-product-name"
-                  name="name"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  placeholder="Ej. Alitas BBQ"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-product-price"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Precio
-                </label>
-
-                <input
-                  id="new-product-price"
-                  name="price"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="999999"
-                  step="0.01"
-                  required
-                  placeholder="185.00"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2 lg:col-span-2">
-                <label
-                  htmlFor="new-product-description"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Descripción
-                </label>
-
-                <textarea
-                  id="new-product-description"
-                  name="description"
-                  rows={4}
-                  maxLength={500}
-                  placeholder="Describe brevemente el platillo."
-                  className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <ProductImageInput id="new-product-image" />
-
-                <p className="mt-2 text-xs leading-5 text-neutral-500">
-                  JPG, PNG o WebP. Máximo 5 MB. Recomendado: 1200 × 900 px.
-                </p>
-              </div>
-
-              <div className="lg:col-span-2">
-                <SubmitButton
-                  label="Crear platillo"
-                  pendingLabel="Creando platillo..."
-                  icon={Plus}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                />
-              </div>
-            </form>
+            <CreateProductForm />
           )}
         </div>
       </section>

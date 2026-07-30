@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Home,
+  LayoutDashboard,
   LogIn,
   LogOut,
   Menu,
@@ -30,6 +31,7 @@ type PublicNavigationItem = {
 
 type HeaderMobileMenuProps = {
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isRestaurant: boolean;
   restaurantName: string | null;
   publicProfileHref: string;
@@ -38,6 +40,7 @@ type HeaderMobileMenuProps = {
 
 export function HeaderMobileMenu({
   isAuthenticated,
+  isAdmin,
   isRestaurant,
   restaurantName,
   publicProfileHref,
@@ -161,6 +164,37 @@ export function HeaderMobileMenu({
 
                   Inicio
                 </Link>
+
+                                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={closeMenu}
+                    aria-current={
+                      isActive("/admin")
+                        ? "page"
+                        : undefined
+                    }
+                    className={[
+                      "flex min-h-14 items-center gap-3 rounded-2xl border px-4 py-3.5 text-sm font-semibold transition-all",
+                      isActive("/admin")
+                        ? "border-slate-950 bg-slate-950 text-white shadow-lg shadow-slate-950/15"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "flex size-9 shrink-0 items-center justify-center rounded-xl",
+                        isActive("/admin")
+                          ? "bg-white/10 text-white"
+                          : "bg-blue-50 text-blue-600",
+                      ].join(" ")}
+                    >
+                      <LayoutDashboard className="size-[18px]" />
+                    </span>
+
+                    Administrador
+                  </Link>
+                )}
 
                 {navigation.map((item) => {
                   const active = isActive(

@@ -13,7 +13,17 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
+const BUCKET_NAME = "restaurant-images";
 const MAX_FEATURED_PRODUCTS = 5;
+const MAX_IMAGE_SIZE =
+  5 * 1024 * 1024;
+
+const allowedImageTypes = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
 type ProductRow = {
   id: string;
   restaurant_id: string;
@@ -48,6 +58,74 @@ function redirectToProducts(
   redirect(
     `/panel/restaurante/platillos?${params.toString()}`,
   );
+}
+
+function getExtension(
+  file: File,
+): string {
+  switch (file.type) {
+    case "image/jpeg":
+      return "jpg";
+
+    case "image/png":
+      return "png";
+
+    case "image/webp":
+      return "webp";
+
+    default:
+      return "";
+  }
+}
+
+function validateImage(
+  file: File,
+): string | null {
+  if (file.size === 0) {
+    return null;
+  }
+
+  if (
+    !allowedImageTypes.includes(
+      file.type as (typeof allowedImageTypes)[number],
+    )
+  ) {
+    return "Selecciona una imagen JPG, PNG o WebP.";
+  }
+
+  if (file.size > MAX_IMAGE_SIZE) {
+    return "La imagen no puede pesar más de 5 MB.";
+  }
+
+  return null;
+}
+
+function getStoragePathFromUrl(
+  imageUrl: string | null,
+): string | null {
+  if (!imageUrl) {
+    return null;
+  }
+
+  const marker =
+    `/storage/v1/object/public/${BUCKET_NAME}/`;
+
+  const markerIndex =
+    imageUrl.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return null;
+  }
+
+  const encodedPath = imageUrl.slice(
+    markerIndex + marker.length,
+  );
+
+  try {
+    return decodeURIComponent(encodedPath);
+  } catch {
+    return encodedPath;
+  }
 }
 
 function validateProductFields(
@@ -95,6 +173,75 @@ function validateProductFields(
     price:
       Math.round(price * 100) / 100,
     error: null,
+  };
+}
+
+async function uploadProductImage({
+  restaurantId,
+  productId,
+  file,
+}: {
+  restaurantId: string;
+  productId: string;
+  file: File;
+}): Promise<{
+  imageUrl: string | null;
+  storagePath: string | null;
+}> {
+  if (file.size === 0) {
+    return {
+      imageUrl: null,
+      storagePath: null,
+    };
+  }
+
+  const extension =
+    getExtension(file);
+
+  if (!extension) {
+    redirectToProducts(
+      "error",
+      "No fue posible identificar el formato de la imagen.",
+    );
+  }
+
+  const storagePath =
+    `${restaurantId}/products/${productId}-${Date.now()}.${extension}`;
+
+  const supabase = await createClient();
+
+  const {
+    error: uploadError,
+  } = await supabase.storage
+    .from(BUCKET_NAME)
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      contentType: file.type,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    console.error(
+      "Error al subir la imagen del platillo:",
+      uploadError,
+    );
+
+    redirectToProducts(
+      "error",
+      "No fue posible subir la imagen del platillo.",
+    );
+  }
+
+  const {
+    data: publicUrlData,
+  } = supabase.storage
+    .from(BUCKET_NAME)
+    .getPublicUrl(storagePath);
+
+  return {
+    imageUrl:
+      publicUrlData.publicUrl,
+    storagePath,
   };
 }
 
@@ -688,18 +835,7 @@ export async function createProductMetadata(
   };
 }
 
-/*
- * Actualiza únicamente la información textual
- * del platillo.
- *
- * La imagen se procesa y se actualiza por separado
- * mediante el flujo:
- *
- * prepare -> upload -> finalize.
- *
- * Ningún archivo debe llegar a esta Server Action.
- */
-export async function updateProductMetadata(
+export async function createProduct(
   formData: FormData,
 ) {
   const authContext =
@@ -708,39 +844,10 @@ export async function updateProductMetadata(
   const restaurantId =
     authContext.restaurant.id;
 
-  const productId =
-    getStringField(
-      formData,
-      "productId",
-    );
-
-  if (!productId) {
-    return {
-      ok: false as const,
-      error:
-        "No fue posible identificar el platillo.",
-    };
-  }
-
-  const product =
-    await getOwnedProductForImageUpload(
-      productId,
-      restaurantId,
-    );
-
-  if (!product) {
-    return {
-      ok: false as const,
-      error:
-        "No fue posible encontrar el platillo.",
-    };
-  }
-
-  const name =
-    getStringField(
-      formData,
-      "name",
-    );
+  const name = getStringField(
+    formData,
+    "name",
+  );
 
   const description =
     getStringField(
@@ -764,57 +871,130 @@ export async function updateProductMetadata(
   );
 
   if (validationError) {
-    return {
-      ok: false as const,
-      error: validationError,
-    };
+    redirectToProducts(
+      "error",
+      validationError,
+    );
   }
 
-  const supabase =
-    createAdminClient();
+  const fileValue =
+    formData.get("image");
+
+  if (
+    fileValue instanceof File
+  ) {
+    const imageError =
+      validateImage(fileValue);
+
+    if (imageError) {
+      redirectToProducts(
+        "error",
+        imageError,
+      );
+    }
+  }
+
+  const supabase = await createClient();
 
   const {
-    data: updatedProduct,
-    error: updateError,
+    data: createdProduct,
+    error: insertError,
   } = await supabase
     .from("restaurant_products")
-    .update({
+    .insert({
+      restaurant_id: restaurantId,
       name,
       description:
         description || null,
       price,
-      updated_at:
-        new Date().toISOString(),
+      image_url: null,
+      featured: false,
     })
-    .eq("id", productId)
-    .eq(
-      "restaurant_id",
-      restaurantId,
-    )
-    .select(`
-      id,
-      name,
-      description,
-      price,
-      image_url,
-      featured
-    `)
+    .select("id")
     .single();
 
   if (
-    updateError ||
-    !updatedProduct
+    insertError ||
+    !createdProduct
   ) {
     console.error(
-      "Error al actualizar los datos del platillo:",
-      updateError,
+      "Error al crear el platillo:",
+      insertError,
     );
 
-    return {
-      ok: false as const,
-      error:
-        "No fue posible actualizar el platillo.",
-    };
+    redirectToProducts(
+      "error",
+      "No fue posible crear el platillo.",
+    );
+  }
+
+  let uploadedStoragePath:
+    | string
+    | null = null;
+
+  if (
+    fileValue instanceof File &&
+    fileValue.size > 0
+  ) {
+    const uploadResult =
+      await uploadProductImage({
+        restaurantId,
+        productId:
+          createdProduct.id,
+        file: fileValue,
+      });
+
+    uploadedStoragePath =
+      uploadResult.storagePath;
+
+    const {
+      error: imageUpdateError,
+    } = await supabase
+      .from("restaurant_products")
+      .update({
+        image_url:
+          uploadResult.imageUrl,
+      })
+      .eq(
+        "id",
+        createdProduct.id,
+      )
+      .eq(
+        "restaurant_id",
+        restaurantId,
+      );
+
+    if (imageUpdateError) {
+      console.error(
+        "Error al guardar la imagen del platillo:",
+        imageUpdateError,
+      );
+
+      if (uploadedStoragePath) {
+        await supabase.storage
+          .from(BUCKET_NAME)
+          .remove([
+            uploadedStoragePath,
+          ]);
+      }
+
+      await supabase
+        .from("restaurant_products")
+        .delete()
+        .eq(
+          "id",
+          createdProduct.id,
+        )
+        .eq(
+          "restaurant_id",
+          restaurantId,
+        );
+
+      redirectToProducts(
+        "error",
+        "No fue posible guardar la imagen del platillo.",
+      );
+    }
   }
 
   const slug =
@@ -824,33 +1004,189 @@ export async function updateProductMetadata(
 
   revalidateProductPages(slug);
 
-  return {
-    ok: true as const,
-    product: {
-      id:
-        updatedProduct.id as string,
-      name:
-        updatedProduct.name as string,
+  redirectToProducts(
+    "message",
+    "El platillo se creó correctamente.",
+  );
+}
+
+export async function updateProduct(
+  formData: FormData,
+) {
+  const authContext =
+    await requireRestaurant();
+
+  const restaurantId =
+    authContext.restaurant.id;
+
+  const productId =
+    getStringField(
+      formData,
+      "productId",
+    );
+
+  const product =
+    await getOwnedProduct(
+      productId,
+      restaurantId,
+    );
+
+  const name = getStringField(
+    formData,
+    "name",
+  );
+
+  const description =
+    getStringField(
+      formData,
+      "description",
+    );
+
+  const priceValue =
+    getStringField(
+      formData,
+      "price",
+    );
+
+  const {
+    price,
+    error: validationError,
+  } = validateProductFields(
+    name,
+    description,
+    priceValue,
+  );
+
+  if (validationError) {
+    redirectToProducts(
+      "error",
+      validationError,
+    );
+  }
+
+  const fileValue =
+    formData.get("image");
+
+  if (
+    fileValue instanceof File
+  ) {
+    const imageError =
+      validateImage(fileValue);
+
+    if (imageError) {
+      redirectToProducts(
+        "error",
+        imageError,
+      );
+    }
+  }
+
+  const supabase = await createClient();
+
+  let nextImageUrl =
+    product.image_url;
+
+  let newStoragePath:
+    | string
+    | null = null;
+
+  if (
+    fileValue instanceof File &&
+    fileValue.size > 0
+  ) {
+    const uploadResult =
+      await uploadProductImage({
+        restaurantId,
+        productId,
+        file: fileValue,
+      });
+
+    nextImageUrl =
+      uploadResult.imageUrl;
+
+    newStoragePath =
+      uploadResult.storagePath;
+  }
+
+  const {
+    error: updateError,
+  } = await supabase
+    .from("restaurant_products")
+    .update({
+      name,
       description:
-        (
-          updatedProduct.description as
-            | string
-            | null
-        ) ?? "",
-      price:
-        Number(
-          updatedProduct.price,
-        ),
-      imageUrl:
-        updatedProduct.image_url as
-          | string
-          | null,
-      featured:
-        updatedProduct.featured as boolean,
-    },
-    message:
-      "El platillo se actualizó correctamente.",
-  };
+        description || null,
+      price,
+      image_url: nextImageUrl,
+      updated_at:
+        new Date().toISOString(),
+    })
+    .eq("id", productId)
+    .eq(
+      "restaurant_id",
+      restaurantId,
+    );
+
+  if (updateError) {
+    console.error(
+      "Error al actualizar el platillo:",
+      updateError,
+    );
+
+    if (newStoragePath) {
+      await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([newStoragePath]);
+    }
+
+    redirectToProducts(
+      "error",
+      "No fue posible actualizar el platillo.",
+    );
+  }
+
+  if (
+    newStoragePath &&
+    product.image_url
+  ) {
+    const previousStoragePath =
+      getStoragePathFromUrl(
+        product.image_url,
+      );
+
+    if (
+      previousStoragePath &&
+      previousStoragePath !==
+        newStoragePath
+    ) {
+      const {
+        error: removeError,
+      } = await supabase.storage
+        .from(BUCKET_NAME)
+        .remove([
+          previousStoragePath,
+        ]);
+
+      if (removeError) {
+        console.error(
+          "No fue posible eliminar la imagen anterior del platillo:",
+          removeError,
+        );
+      }
+    }
+  }
+
+  const slug =
+    await getRestaurantSlug(
+      restaurantId,
+    );
+
+  revalidateProductPages(slug);
+
+  redirectToProducts(
+    "message",
+    "El platillo se actualizó correctamente.",
+  );
 }
 
 export async function toggleProductFeatured(
@@ -1006,21 +1342,21 @@ export async function deleteProduct(
     );
   }
 
-  const storagePaths =
-    getStoragePathsFromPublicUrl(
+  const storagePath =
+    getStoragePathFromUrl(
       product.image_url,
     );
 
-  if (storagePaths.length > 0) {
+  if (storagePath) {
     const {
       error: storageError,
     } = await supabase.storage
-      .from(IMAGE_BUCKET_NAME)
-      .remove(storagePaths);
+      .from(BUCKET_NAME)
+      .remove([storagePath]);
 
     if (storageError) {
       console.error(
-        "No fue posible eliminar las imágenes del platillo:",
+        "No fue posible eliminar la imagen del platillo:",
         storageError,
       );
     }

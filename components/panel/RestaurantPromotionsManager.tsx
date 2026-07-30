@@ -8,7 +8,6 @@ import {
   Clock3,
   Eye,
   EyeOff,
-  ImageIcon,
   LoaderCircle,
   Megaphone,
   Plus,
@@ -19,17 +18,21 @@ import {
 import Image from "next/image";
 import {
   useEffect,
-  useRef,
   useState,
 } from "react";
 import { useFormStatus } from "react-dom";
 
 import {
-  createPromotion,
   deletePromotion,
   togglePromotionActive,
-  updatePromotion,
 } from "@/app/panel/restaurante/promociones/actions";
+
+import {
+  CreatePromotionForm,
+} from "@/components/panel/CreatePromotionForm";
+import {
+  EditPromotionForm,
+} from "@/components/panel/EditPromotionForm";
 
 import type { DatabaseWeekDay } from "@/types/database-restaurants";
 
@@ -65,42 +68,7 @@ type SubmitButtonProps = {
   className?: string;
 };
 
-const promotionDays: {
-  value: DatabaseWeekDay;
-  label: string;
-}[] = [
-  {
-    value: "lunes",
-    label: "Lunes",
-  },
-  {
-    value: "martes",
-    label: "Martes",
-  },
-  {
-    value: "miércoles",
-    label: "Miércoles",
-  },
-  {
-    value: "jueves",
-    label: "Jueves",
-  },
-  {
-    value: "viernes",
-    label: "Viernes",
-  },
-  {
-    value: "sábado",
-    label: "Sábado",
-  },
-  {
-    value: "domingo",
-    label: "Domingo",
-  }
-];
 
-const inputClassName =
-  "min-h-12 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100";
 
 function FeedbackMessage({
   type,
@@ -184,186 +152,6 @@ function SubmitButton({
   );
 }
 
-function PromotionImageInput({
-  id,
-}: {
-  id: string;
-}) {
-  const inputRef =
-    useRef<HTMLInputElement>(null);
-
-  const [
-    selectedFile,
-    setSelectedFile,
-  ] = useState<File | null>(null);
-
-  return (
-    <div className="space-y-3">
-      <input
-        ref={inputRef}
-        id={id}
-        name="image"
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        onChange={(event) => {
-          setSelectedFile(
-            event.target.files?.[0] ??
-              null,
-          );
-        }}
-        className="sr-only"
-      />
-
-      <label
-        htmlFor={id}
-        className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700"
-      >
-        <ImageIcon className="size-5" />
-
-        {selectedFile
-          ? "Cambiar imagen seleccionada"
-          : "Seleccionar imagen"}
-      </label>
-
-      {selectedFile && (
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-orange-200 bg-orange-50 px-3 py-3">
-          <div className="min-w-0">
-            <p className="truncate text-xs font-semibold text-orange-900">
-              {selectedFile.name}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-orange-700">
-              {(
-                selectedFile.size /
-                1024 /
-                1024
-              ).toFixed(2)}{" "}
-              MB
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              setSelectedFile(null);
-
-              if (inputRef.current) {
-                inputRef.current.value =
-                  "";
-              }
-            }}
-            className="shrink-0 rounded-lg px-2 py-1 text-xs font-semibold text-orange-700 hover:bg-orange-100"
-          >
-            Quitar
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PromotionDaysSelector({
-  idPrefix,
-  selectedDays = [],
-}: {
-  idPrefix: string;
-  selectedDays?: DatabaseWeekDay[];
-}) {
-  const [
-    checkedDays,
-    setCheckedDays,
-  ] = useState<DatabaseWeekDay[]>(
-    selectedDays,
-  );
-
-  function handleDayChange(
-    day: DatabaseWeekDay,
-    checked: boolean,
-  ) {
-    if (checked) {
-      if (checkedDays.length >= 6) {
-        return;
-      }
-
-      setCheckedDays([
-        ...checkedDays,
-        day,
-      ]);
-
-      return;
-    }
-
-    setCheckedDays(
-      checkedDays.filter(
-        (selectedDay) =>
-          selectedDay !== day,
-      ),
-    );
-  }
-
-  return (
-    <fieldset className="space-y-3">
-      <legend className="text-sm font-semibold text-neutral-800">
-        Días válidos
-      </legend>
-
-      <p className="text-xs leading-5 text-neutral-500">
-        Selecciona entre uno y seis días. Una promoción no puede estar disponible toda la semana.
-      </p>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {promotionDays.map((day) => {
-          const id =
-            `${idPrefix}-${day.value}`;
-
-          const checked =
-            checkedDays.includes(
-              day.value,
-            );
-
-          const disabled =
-            !checked &&
-            checkedDays.length >= 6;
-
-          return (
-            <label
-              key={day.value}
-              htmlFor={id}
-              className={[
-                "flex items-center gap-2 rounded-xl border px-3 py-3 text-sm font-medium transition",
-                disabled
-                  ? "cursor-not-allowed border-neutral-200 bg-neutral-100 text-neutral-400"
-                  : "cursor-pointer border-neutral-200 bg-white text-neutral-700 hover:border-orange-300 hover:bg-orange-50",
-              ].join(" ")}
-            >
-              <input
-                id={id}
-                name="days"
-                type="checkbox"
-                value={day.value}
-                checked={checked}
-                disabled={disabled}
-                onChange={(event) => {
-                  handleDayChange(
-                    day.value,
-                    event.target.checked,
-                  );
-                }}
-                className="size-4 rounded border-neutral-300 text-orange-500 focus:ring-orange-400 disabled:cursor-not-allowed"
-              />
-
-              {day.label}
-            </label>
-          );
-        })}
-      </div>
-
-      <p className="text-xs font-medium text-neutral-500">
-        {checkedDays.length}/6 días seleccionados
-      </p>
-    </fieldset>
-  );
-}
 
 function formatPrice(
   price: number | null,
@@ -592,179 +380,10 @@ function PromotionCard({
 
         {editing && (
           <div className="border-t border-neutral-100 pt-5">
-            <form
-              action={updatePromotion}
-              className="space-y-4"
-            >
-              <input
-                type="hidden"
-                name="promotionId"
-                value={promotion.id}
-              />
 
-              <div className="space-y-2">
-                <label
-                  htmlFor={`title-${promotion.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Título
-                </label>
-
-                <input
-                  id={`title-${promotion.id}`}
-                  name="title"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  defaultValue={
-                    promotion.title
-                  }
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor={`price-${promotion.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Precio promocional
-                </label>
-
-                <input
-                  id={`price-${promotion.id}`}
-                  name="price"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="999999"
-                  step="0.01"
-                  defaultValue={
-                    promotion.price ?? ""
-                  }
-                  placeholder="Opcional"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor={`description-${promotion.id}`}
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Descripción
-                </label>
-
-                <textarea
-                  id={`description-${promotion.id}`}
-                  name="description"
-                  rows={4}
-                  maxLength={500}
-                  defaultValue={
-                    promotion.description
-                  }
-                  className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                />
-              </div>
-
-              <PromotionDaysSelector
-                idPrefix={`days-${promotion.id}`}
-                selectedDays={
-                  promotion.days
-                }
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label
-                    htmlFor={`start-time-${promotion.id}`}
-                    className="text-sm font-semibold text-neutral-800"
-                  >
-                    Hora de inicio
-                  </label>
-
-                  <input
-                    id={`start-time-${promotion.id}`}
-                    name="startTime"
-                    type="time"
-                    defaultValue={
-                      promotion.startTime
-                    }
-                    className={inputClassName}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor={`end-time-${promotion.id}`}
-                    className="text-sm font-semibold text-neutral-800"
-                  >
-                    Hora de fin
-                  </label>
-
-                  <input
-                    id={`end-time-${promotion.id}`}
-                    name="endTime"
-                    type="time"
-                    defaultValue={
-                      promotion.endTime
-                    }
-                    className={inputClassName}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <label
-                    htmlFor={`valid-from-${promotion.id}`}
-                    className="text-sm font-semibold text-neutral-800"
-                  >
-                    Vigente desde
-                  </label>
-
-                  <input
-                    id={`valid-from-${promotion.id}`}
-                    name="validFrom"
-                    type="date"
-                    defaultValue={
-                      promotion.validFrom
-                    }
-                    className={inputClassName}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label
-                    htmlFor={`valid-until-${promotion.id}`}
-                    className="text-sm font-semibold text-neutral-800"
-                  >
-                    Vigente hasta
-                  </label>
-
-                  <input
-                    id={`valid-until-${promotion.id}`}
-                    name="validUntil"
-                    type="date"
-                    defaultValue={
-                      promotion.validUntil
-                    }
-                    className={inputClassName}
-                  />
-                </div>
-              </div>
-
-              <PromotionImageInput
-                id={`image-${promotion.id}`}
-              />
-
-              <SubmitButton
-                label="Guardar cambios"
-                pendingLabel="Guardando..."
-                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
-              />
-            </form>
+            <EditPromotionForm
+                promotion={promotion}
+            />
 
             <form
               action={deletePromotion}
@@ -889,157 +508,8 @@ export function RestaurantPromotionsManager({
           </button>
 
           {showCreateForm && (
-            <form
-              action={createPromotion}
-              className="mt-6 grid gap-5 rounded-2xl border border-neutral-200 bg-neutral-50 p-5 lg:grid-cols-2"
-            >
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-title"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Título
-                </label>
-
-                <input
-                  id="new-promotion-title"
-                  name="title"
-                  type="text"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                  placeholder="Ej. Martes de alitas"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-price"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Precio promocional
-                </label>
-
-                <input
-                  id="new-promotion-price"
-                  name="price"
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  max="999999"
-                  step="0.01"
-                  placeholder="Opcional"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2 lg:col-span-2">
-                <label
-                  htmlFor="new-promotion-description"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Descripción
-                </label>
-
-                <textarea
-                  id="new-promotion-description"
-                  name="description"
-                  rows={4}
-                  maxLength={500}
-                  placeholder="Describe brevemente la promoción."
-                  className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm leading-6 text-neutral-950 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <PromotionDaysSelector
-                  idPrefix="new-promotion-day"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-start-time"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Hora de inicio
-                </label>
-
-                <input
-                  id="new-promotion-start-time"
-                  name="startTime"
-                  type="time"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-end-time"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Hora de fin
-                </label>
-
-                <input
-                  id="new-promotion-end-time"
-                  name="endTime"
-                  type="time"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-valid-from"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Vigente desde
-                </label>
-
-                <input
-                  id="new-promotion-valid-from"
-                  name="validFrom"
-                  type="date"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="new-promotion-valid-until"
-                  className="text-sm font-semibold text-neutral-800"
-                >
-                  Vigente hasta
-                </label>
-
-                <input
-                  id="new-promotion-valid-until"
-                  name="validUntil"
-                  type="date"
-                  className={inputClassName}
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <PromotionImageInput id="new-promotion-image" />
-
-                <p className="mt-2 text-xs leading-5 text-neutral-500">
-                  JPG, PNG o WebP. Máximo 5 MB. Recomendado: 1200 × 900 px.
-                </p>
-              </div>
-
-              <div className="lg:col-span-2">
-                <SubmitButton
-                  label="Crear promoción"
-                  pendingLabel="Creando promoción..."
-                  icon={Plus}
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-                />
-              </div>
-            </form>
-          )}
+            <CreatePromotionForm />
+        )}
         </div>
       </section>
 

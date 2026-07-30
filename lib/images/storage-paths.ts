@@ -31,6 +31,42 @@ export function buildRestaurantImagePaths({
   };
 }
 
+export function buildProductImagePaths({
+  restaurantId,
+  productId,
+  uploadId,
+}: {
+  restaurantId: string;
+  productId: string;
+  uploadId: string;
+}): ImageStoragePaths {
+  const directory =
+    `${restaurantId}/products/${productId}/${uploadId}`;
+
+  return {
+    card: `${directory}/card.webp`,
+    display: `${directory}/display.webp`,
+  };
+}
+
+export function buildPromotionImagePaths({
+  restaurantId,
+  promotionId,
+  uploadId,
+}: {
+  restaurantId: string;
+  promotionId: string;
+  uploadId: string;
+}): ImageStoragePaths {
+  const directory =
+    `${restaurantId}/promotions/${promotionId}/${uploadId}`;
+
+  return {
+    card: `${directory}/card.webp`,
+    display: `${directory}/display.webp`,
+  };
+}
+
 export function getStoragePathsFromPublicUrl(
   imageUrl: string | null,
 ): string[] {
@@ -62,9 +98,9 @@ export function getStoragePathsFromPublicUrl(
   }
 
   /*
-   * Compatibilidad con las imágenes nuevas.
-   * La base guarda display.webp, pero también
-   * debemos borrar card.webp.
+   * Las imágenes optimizadas guardan display.webp
+   * en la base de datos, pero también contienen
+   * la variante card.webp.
    */
   if (
     storagePath.endsWith(
@@ -81,8 +117,8 @@ export function getStoragePathsFromPublicUrl(
   }
 
   /*
-   * Compatibilidad con las imágenes antiguas,
-   * que solamente tienen un archivo.
+   * Compatibilidad con imágenes antiguas que
+   * solamente tienen un archivo almacenado.
    */
   return [storagePath];
 }

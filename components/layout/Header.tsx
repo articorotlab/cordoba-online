@@ -56,6 +56,10 @@ type RestaurantHeaderData = {
   slug: string;
 };
 
+type HeaderProfile = {
+  platform_role: "user" | "admin";
+};
+
 export async function Header() {
   const supabase = await createClient();
 
@@ -69,11 +73,36 @@ export async function Header() {
     | RestaurantMembership
     | null = null;
 
-  let restaurant:
+    let restaurant:
     | RestaurantHeaderData
     | null = null;
 
+  let profile:
+    | HeaderProfile
+    | null = null;
+
   if (user) {
+        const {
+      data: profileData,
+      error: profileError,
+    } = await supabase
+      .from("profiles")
+      .select("platform_role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(
+        "Error al cargar el rol del usuario en el encabezado:",
+        profileError,
+      );
+    }
+
+    profile =
+      profileData as
+        | HeaderProfile
+        | null;
+
     const { data: membershipData } =
       await supabase
         .from("restaurant_members")
@@ -117,6 +146,9 @@ export async function Header() {
   const isRestaurant = Boolean(
     restaurantMembership && restaurant,
   );
+
+  const isAdmin =
+    profile?.platform_role === "admin";
 
   const userName =
     typeof user?.user_metadata?.full_name ===
@@ -246,10 +278,11 @@ export async function Header() {
               </Link>
             )}
 
-            <HeaderMobileMenu
+              <HeaderMobileMenu
               isAuthenticated={
                 isAuthenticated
               }
+              isAdmin={isAdmin}
               isRestaurant={isRestaurant}
               restaurantName={
                 restaurant?.name ?? null

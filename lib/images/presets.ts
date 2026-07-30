@@ -28,16 +28,16 @@ export const IMAGE_PRESETS: Record<
     inputMaximumSizeMb: 25,
     inputMaximumPixels: 50_000_000,
     card: {
-      width: 640,
-      height: 360,
-      quality: 0.72,
-      maximumSizeMb: 0.22,
+      width: 960,
+      height: 540,
+      quality: 0.84,
+      maximumSizeMb: 0.35,
     },
     display: {
       width: 1600,
       height: 900,
-      quality: 0.8,
-      maximumSizeMb: 0.5,
+      quality: 0.84,
+      maximumSizeMb: 0.65,
     },
   },
 

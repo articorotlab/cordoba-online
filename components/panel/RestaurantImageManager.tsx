@@ -597,7 +597,7 @@ export function RestaurantImageManager({
         title="Portada"
         description="Será la imagen principal que verán las personas al visitar tu perfil."
         currentUrl={coverUrl}
-        recommendation="Recomendado: imagen horizontal 16:9. Se guardarán versiones de 640 × 360 y 1600 × 900 px."
+        recommendation="Recomendado: imagen horizontal 16:9. Se guardarán versiones de 960 × 540 y 1600 × 900 px."
       />
     </div>
   );
