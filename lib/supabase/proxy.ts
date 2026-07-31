@@ -4,6 +4,113 @@ import {
   type NextRequest,
 } from "next/server";
 
+type AuthErrorLike = {
+  code?: unknown;
+  message?: unknown;
+};
+
+function isInvalidRefreshTokenError(
+  error: unknown,
+): boolean {
+  if (
+    typeof error !== "object" ||
+    error === null
+  ) {
+    return false;
+  }
+
+  const authError =
+    error as AuthErrorLike;
+
+  const code =
+    typeof authError.code === "string"
+      ? authError.code
+      : "";
+
+  const message =
+    typeof authError.message === "string"
+      ? authError.message.toLowerCase()
+      : "";
+
+  return (
+    code === "refresh_token_not_found" ||
+    code === "refresh_token_already_used" ||
+    message.includes(
+      "refresh token not found",
+    ) ||
+    message.includes(
+      "invalid refresh token",
+    )
+  );
+}
+
+function isSupabaseAuthCookie(
+  cookieName: string,
+): boolean {
+  /*
+   * Incluye tanto la cookie principal como sus
+   * posibles fragmentos:
+   *
+   * sb-...-auth-token
+   * sb-...-auth-token.0
+   * sb-...-auth-token.1
+   */
+  return (
+    cookieName.startsWith("sb-") &&
+    cookieName.includes(
+      "-auth-token",
+    )
+  );
+}
+
+function clearBrokenAuthCookies(
+  request: NextRequest,
+  response: NextResponse,
+): NextResponse {
+  const authCookies =
+    request.cookies
+      .getAll()
+      .filter((cookie) =>
+        isSupabaseAuthCookie(
+          cookie.name,
+        ),
+      );
+
+  for (const cookie of authCookies) {
+    /*
+     * Evita que los Server Components de esta misma
+     * petición sigan leyendo la cookie dañada.
+     */
+    request.cookies.delete(
+      cookie.name,
+    );
+
+    /*
+     * Indica al navegador que debe eliminarla.
+     */
+    response.cookies.set(
+      cookie.name,
+      "",
+      {
+        path: "/",
+        maxAge: 0,
+        expires: new Date(0),
+        sameSite: "lax",
+        secure:
+          process.env.NODE_ENV ===
+          "production",
+      },
+    );
+  }
+
+  response.headers.set(
+    "Cache-Control",
+    "private, no-store",
+  );
+
+  return response;
+}
+
 export async function updateSession(
   request: NextRequest,
 ) {
@@ -17,7 +124,10 @@ export async function updateSession(
   const supabasePublishableKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!supabaseUrl || !supabasePublishableKey) {
+  if (
+    !supabaseUrl ||
+    !supabasePublishableKey
+  ) {
     return response;
   }
 
@@ -33,7 +143,10 @@ export async function updateSession(
         setAll(cookiesToSet) {
           cookiesToSet.forEach(
             ({ name, value }) => {
-              request.cookies.set(name, value);
+              request.cookies.set(
+                name,
+                value,
+              );
             },
           );
 
@@ -42,7 +155,11 @@ export async function updateSession(
           });
 
           cookiesToSet.forEach(
-            ({ name, value, options }) => {
+            ({
+              name,
+              value,
+              options,
+            }) => {
               response.cookies.set(
                 name,
                 value,
@@ -55,11 +172,58 @@ export async function updateSession(
     },
   );
 
+  try {
+    /*
+     * Supabase recomienda getClaims() en el Proxy:
+     * valida el JWT y refresca la sesión cuando
+     * corresponde.
+     */
+    const {
+      error,
+    } =
+      await supabase.auth.getClaims();
+
+    if (
+      error &&
+      isInvalidRefreshTokenError(
+        error,
+      )
+    ) {
+      return clearBrokenAuthCookies(
+        request,
+        response,
+      );
+    }
+  } catch (error) {
+    if (
+      isInvalidRefreshTokenError(
+        error,
+      )
+    ) {
+      return clearBrokenAuthCookies(
+        request,
+        response,
+      );
+    }
+
+    /*
+     * Un fallo temporal de Auth no debe derribar
+     * toda la página pública.
+     */
+    console.error(
+      "Error al actualizar la sesión de Supabase:",
+      error,
+    );
+  }
+
   /*
-   * getUser() valida la sesión con Supabase Auth
-   * y permite refrescar las cookies si es necesario.
+   * Evita que Cloudflare u otro proxy almacene
+   * respuestas que puedan incluir Set-Cookie.
    */
-  await supabase.auth.getUser();
+  response.headers.set(
+    "Cache-Control",
+    "private, no-store",
+  );
 
   return response;
 }

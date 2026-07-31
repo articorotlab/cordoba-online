@@ -627,8 +627,7 @@ export async function createProductMetadata(
     .insert({
       restaurant_id: restaurantId,
       name,
-      description:
-        description || null,
+      description,
       price,
       image_url: null,
       featured: false,
@@ -780,8 +779,7 @@ export async function updateProductMetadata(
     .from("restaurant_products")
     .update({
       name,
-      description:
-        description || null,
+      description,
       price,
       updated_at:
         new Date().toISOString(),
