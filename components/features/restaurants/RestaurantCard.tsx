@@ -1,7 +1,7 @@
 import {
-  ArrowRight,
   Clock3,
   MapPin,
+  Store,
   Tag,
   Utensils,
 } from "lucide-react";
@@ -46,7 +46,7 @@ export function RestaurantCard({
   return (
     <Link
       href={`/comer/${restaurant.slug}`}
-      className="group block overflow-hidden rounded-[2rem] border border-slate-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+      className="group block overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl"
     >
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-white">
         {coverCardUrl ? (
@@ -76,15 +76,15 @@ export function RestaurantCard({
           />
         )}
 
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/40 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-slate-950/45 to-transparent" />
 
-        <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+        <div className="absolute left-3 top-3 flex max-w-[calc(100%-1.5rem)] flex-wrap gap-2 sm:left-4 sm:top-4">
           <Badge className="rounded-full bg-white text-slate-950 shadow-sm hover:bg-white">
             {restaurant.category}
           </Badge>
 
           {hasPromotions && (
-            <Badge className="rounded-full bg-orange-500 text-white hover:bg-orange-500">
+            <Badge className="rounded-full bg-orange-500 text-white shadow-sm hover:bg-orange-500">
               <Tag
                 aria-hidden="true"
                 className="mr-1 size-3.5"
@@ -96,51 +96,76 @@ export function RestaurantCard({
         </div>
       </div>
 
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h2 className="text-xl font-bold tracking-tight text-slate-950">
+      <div className="p-4 sm:p-5">
+        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:size-20">
+            {logoCardUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoCardUrl}
+                alt={`Logo de ${restaurant.name}`}
+                width={256}
+                height={256}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-contain"
+              />
+            ) : (
+              <Store
+                aria-hidden="true"
+                className="size-7 text-orange-400 sm:size-8"
+              />
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="line-clamp-2 text-lg font-extrabold leading-tight tracking-tight text-slate-950 sm:text-xl">
               {restaurant.name}
             </h2>
 
-            <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">
-              {restaurant.description}
-            </p>
+            {restaurant.description ? (
+              <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-slate-600 sm:text-sm sm:leading-6">
+                {restaurant.description}
+              </p>
+            ) : (
+              <p className="mt-1.5 text-xs leading-5 text-slate-400 sm:text-sm">
+                Descubre el menú y las promociones de este restaurante.
+              </p>
+            )}
           </div>
-
-          <ArrowRight
-            aria-hidden="true"
-            className="mt-1 size-5 shrink-0 text-slate-400 transition-transform group-hover:translate-x-1 group-hover:text-blue-600"
-          />
         </div>
 
-        <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
-          <span className="inline-flex items-center gap-1.5">
-            <MapPin
-              aria-hidden="true"
-              className="size-4"
-            />
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm">
+            <span className="inline-flex min-w-0 items-center gap-1.5 font-medium text-slate-500">
+              <MapPin
+                aria-hidden="true"
+                className="size-4 shrink-0 text-blue-500"
+              />
 
-            {restaurant.zone}
-          </span>
+              <span className="truncate">
+                {restaurant.zone}
+              </span>
+            </span>
 
-          <span
-            className={[
-              "inline-flex items-center gap-1.5 font-medium",
-              isOpen
-                ? "text-emerald-600"
-                : "text-slate-500",
-            ].join(" ")}
-          >
-            <Clock3
-              aria-hidden="true"
-              className="size-4"
-            />
+            <span
+              className={[
+                "inline-flex items-center gap-1.5 font-semibold",
+                isOpen
+                  ? "text-emerald-600"
+                  : "text-slate-500",
+              ].join(" ")}
+            >
+              <Clock3
+                aria-hidden="true"
+                className="size-4 shrink-0"
+              />
 
-            {isOpen
-              ? "Abierto ahora"
-              : "Cerrado"}
-          </span>
+              {isOpen
+                ? "Abierto ahora"
+                : "Cerrado"}
+            </span>
+          </div>
         </div>
       </div>
     </Link>

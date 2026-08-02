@@ -133,7 +133,7 @@ export default async function ComerPage() {
       <div className="mt-8 border-t border-slate-100 pt-8 sm:mt-10 sm:pt-10">
         <RestaurantExplorer
             restaurants={sortedRestaurants}
-            initialLimit={6}
+            initialLimit={8}
         />
       </div>
     </PageContainer>

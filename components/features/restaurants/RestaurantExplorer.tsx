@@ -134,7 +134,7 @@ const categoryAppearances: Record<
 
 export function RestaurantExplorer({
   restaurants,
-  initialLimit = 6,
+  initialLimit = 8,
 }: RestaurantExplorerProps) {
   const [selectedCategory, setSelectedCategory] =
     useState<FoodCategory>("Todos");

@@ -3,8 +3,14 @@ import {
   Geist,
   Geist_Mono,
 } from "next/font/google";
+import {
+  Suspense,
+} from "react";
 
 import { Footer } from "@/components/layout/Footer";
+import {
+  GlobalNavigationLoader,
+} from "@/components/layout/GlobalNavigationLoader";
 import { Header } from "@/components/layout/Header";
 
 import "./globals.css";
@@ -38,6 +44,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-white font-sans text-slate-950 antialiased`}
       >
+        <Suspense fallback={null}>
+          <GlobalNavigationLoader />
+        </Suspense>
+
         <div className="flex min-h-screen flex-col">
           <Header />
 

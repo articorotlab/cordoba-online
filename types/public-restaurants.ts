@@ -33,6 +33,17 @@ export type PublicRestaurantSchedule = {
   closed: boolean;
 };
 
+export type PublicRestaurantDirectoryItem = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  description: string;
+  zone: string;
+  logo: string | null;
+  schedule: PublicRestaurantSchedule[];
+};
+
 export type PublicRestaurant = {
   id: string;
   slug: string;

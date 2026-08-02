@@ -278,6 +278,22 @@ export default async function RestaurantPage({
     <>
       <section className="border-b border-orange-100 bg-gradient-to-br from-orange-50/70 via-white to-white">
         <PageContainer className="py-6 sm:py-8">
+            <div className="sticky top-4 z-50 mb-5">
+                <Link
+                    href="/comer"
+                    className="group inline-flex h-11 items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 text-sm font-bold text-orange-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+                >
+                    <span className="flex size-7 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 group-hover:-translate-x-0.5">
+                    <ArrowLeft
+                        aria-hidden="true"
+                        className="size-4"
+                    />
+                    </span>
+
+                    Volver a restaurantes
+                </Link>
+              </div>
+
           <div className="relative overflow-hidden rounded-[2rem] bg-slate-950 shadow-xl shadow-slate-950/10">
             <div className="relative h-[24rem] sm:h-[30rem] lg:h-[34rem]">
               {coverDisplayUrl ? (
@@ -307,17 +323,6 @@ export default async function RestaurantPage({
               )}
 
               <div className="absolute inset-0 bg-gradient-to-b from-slate-950/40 via-slate-950/5 to-slate-950/80" />
-
-              <Link
-                href="/comer"
-                aria-label="Volver a restaurantes"
-                className="absolute left-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-orange-500 text-white shadow-xl shadow-orange-950/30 transition-all duration-300 hover:-translate-y-0.5 hover:scale-105 hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 sm:left-6 sm:top-6"
-                >
-                <ArrowLeft
-                    aria-hidden="true"
-                    className="size-5"
-                />
-              </Link>
 
               <div className="absolute inset-x-0 bottom-0 flex justify-center px-5 pb-8 sm:px-8 sm:pb-10">
                 <div className="flex size-40 items-center justify-center overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-2xl sm:size-48 lg:size-52">
