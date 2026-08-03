@@ -7,35 +7,30 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-import { Badge } from "@/components/ui/badge";
-import { getImageVariantUrl } from "@/lib/images/storage-url";
 import {
-  isRestaurantOpenNow,
-  restaurantHasPromotionToday,
-} from "@/lib/restaurants/public-utils";
+  Badge,
+} from "@/components/ui/badge";
+import {
+  getImageVariantUrl,
+} from "@/lib/images/storage-url";
 
-import type { PublicRestaurant } from "@/types/public-restaurants";
+import type {
+  PublicRestaurantCardItem,
+} from "@/types/public-restaurants";
 
 type RestaurantCardProps = {
-  restaurant: PublicRestaurant;
+  restaurant:
+    PublicRestaurantCardItem;
 };
 
 export function RestaurantCard({
   restaurant,
 }: RestaurantCardProps) {
-  const isOpen =
-    isRestaurantOpenNow(restaurant);
-
-  const hasPromotions =
-    restaurantHasPromotionToday(
-      restaurant,
-    );
-
   const coverDisplayUrl =
-  getImageVariantUrl(
-    restaurant.cover,
-    "display",
-  );
+    getImageVariantUrl(
+      restaurant.cover,
+      "display",
+    );
 
   const logoCardUrl =
     getImageVariantUrl(
@@ -83,7 +78,7 @@ export function RestaurantCard({
             {restaurant.category}
           </Badge>
 
-          {hasPromotions && (
+          {restaurant.hasPromotionToday && (
             <Badge className="rounded-full bg-orange-500 text-white shadow-sm hover:bg-orange-500">
               <Tag
                 aria-hidden="true"
@@ -129,7 +124,8 @@ export function RestaurantCard({
               </p>
             ) : (
               <p className="mt-1.5 text-xs leading-5 text-slate-400 sm:text-sm">
-                Descubre el menú y las promociones de este restaurante.
+                Descubre el menú y las promociones de este
+                restaurante.
               </p>
             )}
           </div>
@@ -151,7 +147,7 @@ export function RestaurantCard({
             <span
               className={[
                 "inline-flex items-center gap-1.5 font-semibold",
-                isOpen
+                restaurant.isOpen
                   ? "text-emerald-600"
                   : "text-slate-500",
               ].join(" ")}
@@ -161,7 +157,7 @@ export function RestaurantCard({
                 className="size-4 shrink-0"
               />
 
-              {isOpen
+              {restaurant.isOpen
                 ? "Abierto ahora"
                 : "Cerrado"}
             </span>

@@ -1,5 +1,6 @@
 import type { DatabaseWeekDay } from "@/types/database-restaurants";
 import type {
+  PublicPromotionRestaurantSummary,
   PublicRestaurant,
   PublicRestaurantPromotion,
   PublicRestaurantSchedule,
@@ -7,7 +8,7 @@ import type {
 
 export type PublicPromotionWithRestaurant = {
   promotion: PublicRestaurantPromotion;
-  restaurant: PublicRestaurant;
+  restaurant: PublicPromotionRestaurantSummary;
 };
 
 const CORDOBA_TIME_ZONE = "America/Mexico_City";

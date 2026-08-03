@@ -124,23 +124,34 @@ async function processVariant({
   preset: ImageVariantPreset;
 }): Promise<ProcessedImageVariant> {
   const compressedBlob =
-    await imageCompression(
-      sourceFile,
-      {
-        fileType: "image/webp",
-        initialQuality:
-          preset.quality,
-        maxSizeMB:
-          preset.maximumSizeMb,
-        maxWidthOrHeight:
-          Math.max(
-            preset.width,
-            preset.height,
-          ),
-        useWebWorker: true,
-        preserveExif: false,
-      },
-    );
+  await imageCompression(
+    sourceFile,
+    {
+      fileType: "image/webp",
+      initialQuality:
+        preset.quality,
+      maxSizeMB:
+        preset.maximumSizeMb,
+      maxWidthOrHeight:
+        Math.max(
+          preset.width,
+          preset.height,
+        ),
+
+      /*
+       * Respeta la resolución definida por el preset.
+       *
+       * Por ejemplo, una imagen de producto display
+       * se limitará primero a 1200 × 1200 px, pero no
+       * seguirá reduciendo sus dimensiones para llegar
+       * al peso máximo. En su lugar, ajustará la calidad.
+       */
+      alwaysKeepResolution: true,
+
+      useWebWorker: true,
+      preserveExif: false,
+    },
+  );
 
   const processedFile =
     new File(

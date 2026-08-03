@@ -11,13 +11,13 @@ import {
 import { formatPromotionPrice } from "@/lib/restaurants/promotion-price";
 
 import type {
-  PublicRestaurant,
+  PublicPromotionRestaurantSummary,
   PublicRestaurantPromotion,
 } from "@/types/public-restaurants";
 
 type PublicPromotionCardProps = {
   promotion: PublicRestaurantPromotion;
-  restaurant: PublicRestaurant;
+  restaurant: PublicPromotionRestaurantSummary;
   locked?: boolean;
 };
 

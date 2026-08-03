@@ -177,7 +177,7 @@ export function RestaurantDirectoryList({
       )}
 
       {!hasMore &&
-        restaurants.length > 20 && (
+        restaurants.length > 10 && (
           <p className="mt-8 text-center text-sm font-medium text-slate-500">
             Ya viste todos los restaurantes disponibles.
           </p>

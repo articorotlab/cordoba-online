@@ -1,6 +1,9 @@
 import { Utensils } from "lucide-react";
 
+import { getImageVariantUrl } from "@/lib/images/storage-url";
+
 import type { PublicRestaurant } from "@/types/public-restaurants";
+
 
 type RestaurantProduct =
   PublicRestaurant["products"][number];
@@ -26,16 +29,24 @@ export function RestaurantProductCard({
 }: RestaurantProductCardProps) {
   const formattedPrice = formatPrice(product.price);
 
+  const productDisplayUrl =
+  getImageVariantUrl(
+    product.image,
+    "display",
+  );
+
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-[0_18px_45px_rgba(15,23,42,0.10)]">
       <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-white">
-        {product.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.image}
-            alt={product.name}
-            className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          />
+        {productDisplayUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+                src={productDisplayUrl}
+                alt={product.name}
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 size-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+            />
         ) : (
           <div className="flex size-20 items-center justify-center rounded-[1.5rem] bg-white/80 shadow-sm backdrop-blur-sm">
             <Utensils

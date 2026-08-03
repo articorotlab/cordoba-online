@@ -1,3 +1,7 @@
+import {
+  BrandTypingLoader,
+} from "@/components/layout/BrandTypingLoader";
+
 import styles from "./loading.module.css";
 
 export default function Loading() {
@@ -9,21 +13,18 @@ export default function Loading() {
       className={styles.overlay}
     >
       <div
-        aria-hidden="true"
-        className={styles.brandWrapper}
+        className={
+          styles.brandWrapper
+        }
       >
-        <div className={styles.brandTyping}>
-          <span className={styles.cordoba}>
-            cordoba.
-          </span>
-
-          <span className={styles.onlineTyping}>
-            online...
-          </span>
-        </div>
+        <BrandTypingLoader />
       </div>
 
-      <span className={styles.screenReaderText}>
+      <span
+        className={
+          styles.screenReaderText
+        }
+      >
         Cargando página
       </span>
     </div>

@@ -4,7 +4,7 @@ import {
   getPublicRestaurantDirectoryPage,
 } from "@/lib/restaurants/queries";
 
-const RESTAURANTS_PER_PAGE = 20;
+const RESTAURANTS_PER_PAGE = 10;
 
 export async function loadMoreRestaurants({
   category,

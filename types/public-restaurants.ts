@@ -25,6 +25,13 @@ export type PublicRestaurantPromotion = {
   position: number;
 };
 
+export type PublicPromotionRestaurantSummary = {
+  id: string;
+  slug: string;
+  name: string;
+  zone: string;
+};
+
 export type PublicRestaurantSchedule = {
   id: string;
   day: DatabaseWeekDay;
@@ -42,6 +49,19 @@ export type PublicRestaurantDirectoryItem = {
   zone: string;
   logo: string | null;
   schedule: PublicRestaurantSchedule[];
+};
+
+export type PublicRestaurantCardItem = {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  description: string;
+  zone: string;
+  logo: string | null;
+  cover: string | null;
+  isOpen: boolean;
+  hasPromotionToday: boolean;
 };
 
 export type PublicRestaurant = {

@@ -4,49 +4,75 @@ import {
   Flame,
 } from "lucide-react";
 
-import { RestaurantExplorer } from "@/components/features/restaurants/RestaurantExplorer";
-import { PageContainer } from "@/components/layout/PageContainer";
-import { PromotionCarousel } from "@/components/promotions/PromotionCarousel";
 import {
-  getPromotionsToday,
-  sortRestaurantsForToday,
-} from "@/lib/restaurants/public-utils";
-import { getPublicRestaurants } from "@/lib/restaurants/queries";
-import { createClient } from "@/lib/supabase/server";
+  RestaurantExplorer,
+} from "@/components/features/restaurants/RestaurantExplorer";
+import {
+  PageContainer,
+} from "@/components/layout/PageContainer";
+import {
+  PromotionCarousel,
+} from "@/components/promotions/PromotionCarousel";
+import {
+  getPublicPromotionsPage,
+} from "@/lib/promotions/queries";
+import {
+  getCordobaNowContext,
+} from "@/lib/restaurants/cordoba-now";
+import {
+  getPublicHomeRestaurantsPage,
+} from "@/lib/restaurants/home-queries";
+import {
+  createClient,
+} from "@/lib/supabase/server";
+
+const HOME_PROMOTIONS_LIMIT = 6;
+const HOME_RESTAURANTS_LIMIT = 10;
 
 export default async function ComerPage() {
-  const supabase = await createClient();
+  const supabase =
+    await createClient();
+
+  const context =
+    getCordobaNowContext();
 
   const [
     {
-      data: { user },
+      data: {
+        user,
+      },
     },
-    restaurants,
+    promotionsPage,
+    restaurantsPage,
   ] = await Promise.all([
     supabase.auth.getUser(),
-    getPublicRestaurants(),
+
+    getPublicPromotionsPage({
+      selectedDate:
+        context.date,
+      day:
+        context.day,
+      offset: 0,
+      limit:
+        HOME_PROMOTIONS_LIMIT,
+    }),
+
+    getPublicHomeRestaurantsPage({
+      context,
+      offset: 0,
+      limit:
+        HOME_RESTAURANTS_LIMIT,
+    }),
   ]);
 
-  const isAuthenticated = Boolean(user);
-
-  const sortedRestaurants =
-    sortRestaurantsForToday(restaurants);
-
-  /*
-   * Las promociones se obtienen tanto con sesión como sin sesión.
-   *
-   * Cuando el visitante no tiene sesión, el carrusel muestra
-   * las tarjetas bloqueadas, pero conserva las imágenes,
-   * restaurantes y ubicaciones reales.
-   */
-  const todayPromotions =
-    getPromotionsToday(sortedRestaurants);
+  const isAuthenticated =
+    Boolean(user);
 
   const visibleTodayPromotions =
-    todayPromotions.slice(0, 6);
+    promotionsPage.promotions;
 
   const promotionCount =
-    todayPromotions.length;
+    promotionsPage.total;
 
   return (
     <PageContainer className="py-8 sm:py-12">
@@ -101,8 +127,12 @@ export default async function ComerPage() {
         </div>
 
         <PromotionCarousel
-          promotions={visibleTodayPromotions}
-          locked={!isAuthenticated}
+          promotions={
+            visibleTodayPromotions
+          }
+          locked={
+            !isAuthenticated
+          }
           showViewAllCard={
             isAuthenticated &&
             promotionCount >
@@ -132,8 +162,12 @@ export default async function ComerPage() {
 
       <div className="mt-8 border-t border-slate-100 pt-8 sm:mt-10 sm:pt-10">
         <RestaurantExplorer
-            restaurants={sortedRestaurants}
-            initialLimit={8}
+          initialRestaurants={
+            restaurantsPage.restaurants
+          }
+          initialTotal={
+            restaurantsPage.total
+          }
         />
       </div>
     </PageContainer>

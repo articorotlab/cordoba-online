@@ -1,23 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import {
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowRight,
+  LoaderCircle,
   Store,
+  TriangleAlert,
 } from "lucide-react";
 
-import { RestaurantGrid } from "@/components/features/restaurants/RestaurantGrid";
+import {
+  loadHomeRestaurants,
+} from "@/app/comer/actions";
+import {
+  RestaurantGrid,
+} from "@/components/features/restaurants/RestaurantGrid";
 import {
   foodCategories,
   type FoodCategory,
 } from "@/constants/food-categories";
 
-import type { PublicRestaurant } from "@/types/public-restaurants";
+import type {
+  PublicRestaurantCardItem,
+} from "@/types/public-restaurants";
 
 type RestaurantExplorerProps = {
-  restaurants: PublicRestaurant[];
-  initialLimit?: number;
+  initialRestaurants:
+    PublicRestaurantCardItem[];
+  initialTotal: number;
 };
 
 type CategoryAppearance = {
@@ -35,127 +48,209 @@ const categoryAppearances: Record<
   Todos: {
     emoji: "🍽️",
     background: "bg-slate-100",
-    selectedBackground: "bg-slate-950",
-    selectedText: "text-slate-950",
-    ring: "ring-slate-950/10",
+    selectedBackground:
+      "bg-slate-950",
+    selectedText:
+      "text-slate-950",
+    ring:
+      "ring-slate-950/10",
   },
+
   Tacos: {
     emoji: "🌮",
     background: "bg-amber-100",
-    selectedBackground: "bg-amber-400",
-    selectedText: "text-amber-700",
-    ring: "ring-amber-400/30",
+    selectedBackground:
+      "bg-amber-400",
+    selectedText:
+      "text-amber-700",
+    ring:
+      "ring-amber-400/30",
   },
+
   Hamburguesas: {
     emoji: "🍔",
     background: "bg-orange-100",
-    selectedBackground: "bg-orange-500",
-    selectedText: "text-orange-700",
-    ring: "ring-orange-500/30",
+    selectedBackground:
+      "bg-orange-500",
+    selectedText:
+      "text-orange-700",
+    ring:
+      "ring-orange-500/30",
   },
+
   Alitas: {
     emoji: "🍗",
     background: "bg-red-100",
-    selectedBackground: "bg-red-500",
-    selectedText: "text-red-700",
-    ring: "ring-red-500/30",
+    selectedBackground:
+      "bg-red-500",
+    selectedText:
+      "text-red-700",
+    ring:
+      "ring-red-500/30",
   },
+
   Pizzerías: {
     emoji: "🍕",
     background: "bg-yellow-100",
-    selectedBackground: "bg-yellow-400",
-    selectedText: "text-yellow-700",
-    ring: "ring-yellow-400/30",
+    selectedBackground:
+      "bg-yellow-400",
+    selectedText:
+      "text-yellow-700",
+    ring:
+      "ring-yellow-400/30",
   },
+
   Mariscos: {
     emoji: "🦐",
     background: "bg-sky-100",
-    selectedBackground: "bg-sky-500",
-    selectedText: "text-sky-700",
-    ring: "ring-sky-500/30",
+    selectedBackground:
+      "bg-sky-500",
+    selectedText:
+      "text-sky-700",
+    ring:
+      "ring-sky-500/30",
   },
+
   Cafeterías: {
     emoji: "☕",
     background: "bg-stone-200",
-    selectedBackground: "bg-amber-800",
-    selectedText: "text-amber-800",
-    ring: "ring-amber-800/20",
+    selectedBackground:
+      "bg-amber-800",
+    selectedText:
+      "text-amber-800",
+    ring:
+      "ring-amber-800/20",
   },
+
   Desayunos: {
     emoji: "🍳",
     background: "bg-yellow-100",
-    selectedBackground: "bg-yellow-400",
-    selectedText: "text-yellow-700",
-    ring: "ring-yellow-400/30",
+    selectedBackground:
+      "bg-yellow-400",
+    selectedText:
+      "text-yellow-700",
+    ring:
+      "ring-yellow-400/30",
   },
+
   Postres: {
     emoji: "🍰",
     background: "bg-pink-100",
-    selectedBackground: "bg-pink-500",
-    selectedText: "text-pink-700",
-    ring: "ring-pink-500/30",
+    selectedBackground:
+      "bg-pink-500",
+    selectedText:
+      "text-pink-700",
+    ring:
+      "ring-pink-500/30",
   },
+
   Antojitos: {
     emoji: "🫔",
     background: "bg-lime-100",
-    selectedBackground: "bg-lime-500",
-    selectedText: "text-lime-700",
-    ring: "ring-lime-500/30",
+    selectedBackground:
+      "bg-lime-500",
+    selectedText:
+      "text-lime-700",
+    ring:
+      "ring-lime-500/30",
   },
+
   "Comida mexicana": {
     emoji: "🌶️",
-    background: "bg-emerald-100",
-    selectedBackground: "bg-emerald-600",
-    selectedText: "text-emerald-700",
-    ring: "ring-emerald-600/30",
+    background:
+      "bg-emerald-100",
+    selectedBackground:
+      "bg-emerald-600",
+    selectedText:
+      "text-emerald-700",
+    ring:
+      "ring-emerald-600/30",
   },
+
   Saludable: {
     emoji: "🥗",
     background: "bg-green-100",
-    selectedBackground: "bg-green-500",
-    selectedText: "text-green-700",
-    ring: "ring-green-500/30",
+    selectedBackground:
+      "bg-green-500",
+    selectedText:
+      "text-green-700",
+    ring:
+      "ring-green-500/30",
   },
+
   "Fast food": {
     emoji: "🍟",
     background: "bg-orange-100",
-    selectedBackground: "bg-orange-500",
-    selectedText: "text-orange-700",
-    ring: "ring-orange-500/30",
+    selectedBackground:
+      "bg-orange-500",
+    selectedText:
+      "text-orange-700",
+    ring:
+      "ring-orange-500/30",
   },
+
   Otros: {
     emoji: "✨",
-    background: "bg-violet-100",
-    selectedBackground: "bg-violet-500",
-    selectedText: "text-violet-700",
-    ring: "ring-violet-500/30",
+    background:
+      "bg-violet-100",
+    selectedBackground:
+      "bg-violet-500",
+    selectedText:
+      "text-violet-700",
+    ring:
+      "ring-violet-500/30",
   },
 };
 
 export function RestaurantExplorer({
-  restaurants,
-  initialLimit = 8,
+  initialRestaurants,
+  initialTotal,
 }: RestaurantExplorerProps) {
-  const [selectedCategory, setSelectedCategory] =
-    useState<FoodCategory>("Todos");
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] =
+    useState<FoodCategory>(
+      "Todos",
+    );
 
-  const filteredRestaurants = useMemo(() => {
-    if (selectedCategory === "Todos") {
-      return restaurants;
-    }
+  const [
+    restaurants,
+    setRestaurants,
+  ] = useState(
+    initialRestaurants,
+  );
 
-    return restaurants.filter((restaurant) => {
-      return restaurant.category === selectedCategory;
-    });
-  }, [restaurants, selectedCategory]);
+  const [
+    total,
+    setTotal,
+  ] = useState(
+    initialTotal,
+  );
 
-  const visibleRestaurants =
-    filteredRestaurants.slice(0, initialLimit);
+  const [
+    isLoading,
+    setIsLoading,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<
+    string | null
+  >(null);
+
+  /*
+   * Permite ignorar una respuesta anterior si el usuario
+   * selecciona rápidamente otra categoría.
+   */
+  const requestIdRef =
+    useRef(0);
 
   const resultLabel =
-    filteredRestaurants.length === 1
+    total === 1
       ? "1 restaurante"
-      : `${filteredRestaurants.length} restaurantes`;
+      : `${total} restaurantes`;
 
   const viewAllLabel =
     selectedCategory === "Todos"
@@ -169,10 +264,88 @@ export function RestaurantExplorer({
           selectedCategory,
         )}`;
 
-  function handleCategoryChange(
+  async function handleCategoryChange(
     category: FoodCategory,
   ) {
-    setSelectedCategory(category);
+    if (
+      category ===
+      selectedCategory
+    ) {
+      return;
+    }
+
+    const requestId =
+      requestIdRef.current + 1;
+
+    requestIdRef.current =
+      requestId;
+
+    setSelectedCategory(
+      category,
+    );
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result =
+        await loadHomeRestaurants({
+          category,
+        });
+
+      /*
+       * Ignorar respuestas antiguas si existe una
+       * solicitud más reciente.
+       */
+      if (
+        requestId !==
+        requestIdRef.current
+      ) {
+        return;
+      }
+
+      if (!result.ok) {
+        throw new Error(
+          result.error,
+        );
+      }
+
+      setRestaurants(
+        result.restaurants,
+      );
+
+      setTotal(
+        result.total,
+      );
+    } catch (loadError) {
+      if (
+        requestId !==
+        requestIdRef.current
+      ) {
+        return;
+      }
+
+      console.error(
+        "Error al cargar la categoría de restaurantes:",
+        loadError,
+      );
+
+      setRestaurants([]);
+      setTotal(0);
+
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "No fue posible cargar los restaurantes.",
+      );
+    } finally {
+      if (
+        requestId ===
+        requestIdRef.current
+      ) {
+        setIsLoading(false);
+      }
+    }
   }
 
   return (
@@ -192,7 +365,9 @@ export function RestaurantExplorer({
               aria-live="polite"
               className="mt-2 text-sm font-medium text-slate-500"
             >
-              {resultLabel}
+              {isLoading
+                ? "Cargando restaurantes..."
+                : resultLabel}
             </p>
           </div>
         </div>
@@ -200,87 +375,127 @@ export function RestaurantExplorer({
 
       <div className="-mx-4 mt-7 overflow-x-auto px-4 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:-mx-6 sm:px-6">
         <div className="flex min-w-max gap-3 sm:gap-4">
-          {foodCategories.map((category) => {
-            const isSelected =
-              selectedCategory === category;
+          {foodCategories.map(
+            (category) => {
+              const isSelected =
+                selectedCategory ===
+                category;
 
-            const appearance =
-              categoryAppearances[category];
+              const appearance =
+                categoryAppearances[
+                  category
+                ];
 
-            return (
-              <button
-                key={category}
-                type="button"
-                aria-pressed={isSelected}
-                onClick={() =>
-                  handleCategoryChange(category)
-                }
-                className="group flex w-[88px] shrink-0 flex-col items-center text-center sm:w-[104px]"
-              >
-                <span
-                  className={[
-                    "relative flex size-[72px] items-center justify-center rounded-[1.6rem] text-3xl transition-all duration-300 sm:size-20 sm:text-4xl",
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  aria-pressed={
                     isSelected
-                      ? `${appearance.selectedBackground} scale-105 shadow-lg ring-4 ${appearance.ring}`
-                      : `${appearance.background} shadow-sm group-hover:-translate-y-1 group-hover:shadow-md`,
-                  ].join(" ")}
+                  }
+                  onClick={() => {
+                    void handleCategoryChange(
+                      category,
+                    );
+                  }}
+                  className="group flex w-[88px] shrink-0 flex-col items-center text-center sm:w-[104px]"
                 >
+                  <span
+                    className={[
+                      "relative flex size-[72px] items-center justify-center rounded-[1.6rem] text-3xl transition-all duration-300 sm:size-20 sm:text-4xl",
+                      isSelected
+                        ? `${appearance.selectedBackground} scale-105 shadow-lg ring-4 ${appearance.ring}`
+                        : `${appearance.background} shadow-sm group-hover:-translate-y-1 group-hover:shadow-md`,
+                    ].join(" ")}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={[
+                        "transition-transform duration-300",
+                        isSelected
+                          ? "scale-110"
+                          : "group-hover:scale-110",
+                      ].join(" ")}
+                    >
+                      {
+                        appearance.emoji
+                      }
+                    </span>
+
+                    {isSelected && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-b border-r border-white/20 bg-inherit"
+                      />
+                    )}
+                  </span>
+
+                  <span
+                    className={[
+                      "mt-3 max-w-[104px] text-sm font-semibold leading-5 transition-colors",
+                      isSelected
+                        ? appearance.selectedText
+                        : "text-slate-600 group-hover:text-slate-950",
+                    ].join(" ")}
+                  >
+                    {category}
+                  </span>
+
                   <span
                     aria-hidden="true"
                     className={[
-                      "transition-transform duration-300",
+                      "mt-2 h-1 rounded-full transition-all duration-300",
                       isSelected
-                        ? "scale-110"
-                        : "group-hover:scale-110",
+                        ? "w-6 bg-orange-500"
+                        : "w-0 bg-transparent",
                     ].join(" ")}
-                  >
-                    {appearance.emoji}
-                  </span>
-
-                  {isSelected && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute -bottom-1.5 left-1/2 size-3 -translate-x-1/2 rotate-45 border-b border-r border-white/20 bg-inherit"
-                    />
-                  )}
-                </span>
-
-                <span
-                  className={[
-                    "mt-3 max-w-[104px] text-sm font-semibold leading-5 transition-colors",
-                    isSelected
-                      ? appearance.selectedText
-                      : "text-slate-600 group-hover:text-slate-950",
-                  ].join(" ")}
-                >
-                  {category}
-                </span>
-
-                <span
-                  aria-hidden="true"
-                  className={[
-                    "mt-2 h-1 rounded-full transition-all duration-300",
-                    isSelected
-                      ? "w-6 bg-orange-500"
-                      : "w-0 bg-transparent",
-                  ].join(" ")}
-                />
-              </button>
-            );
-          })}
+                  />
+                </button>
+              );
+            },
+          )}
         </div>
       </div>
 
       <div className="mt-4 border-t border-slate-100 pt-8 sm:mt-6 sm:pt-10">
-        {visibleRestaurants.length > 0 ? (
+        {isLoading ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex min-h-72 flex-col items-center justify-center rounded-[1.75rem] border border-slate-100 bg-slate-50/70"
+          >
+            <LoaderCircle
+              aria-hidden="true"
+              className="size-8 animate-spin text-orange-500"
+            />
+
+            <p className="mt-4 text-sm font-semibold text-slate-500">
+              Cargando restaurantes...
+            </p>
+          </div>
+        ) : error ? (
+          <div
+            role="alert"
+            className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium leading-6 text-red-700"
+          >
+            <TriangleAlert
+              aria-hidden="true"
+              className="mt-0.5 size-5 shrink-0"
+            />
+
+            <p>{error}</p>
+          </div>
+        ) : restaurants.length > 0 ? (
           <>
             <RestaurantGrid
-              restaurants={visibleRestaurants}
+              restaurants={
+                restaurants
+              }
             />
 
             <Link
               href={viewAllHref}
-              className="group mt-7 inline-flex h-13 w-full items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-5 text-sm font-bold text-orange-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-md"
+              className="group mt-7 inline-flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-bold text-orange-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-md"
             >
               {viewAllLabel}
 
@@ -308,12 +523,15 @@ export function RestaurantExplorer({
               categoría {selectedCategory}.
             </p>
 
-            {selectedCategory !== "Todos" && (
+            {selectedCategory !==
+              "Todos" && (
               <button
                 type="button"
-                onClick={() =>
-                  handleCategoryChange("Todos")
-                }
+                onClick={() => {
+                  void handleCategoryChange(
+                    "Todos",
+                  );
+                }}
                 className="mt-5 text-sm font-bold text-orange-600 transition-colors hover:text-orange-700"
               >
                 Ver todos los restaurantes

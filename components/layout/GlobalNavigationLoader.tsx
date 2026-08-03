@@ -12,6 +12,10 @@ import {
 
 import styles from "@/app/loading.module.css";
 
+import {
+  BrandTypingLoader,
+} from "@/components/layout/BrandTypingLoader";
+
 const MINIMUM_VISIBLE_TIME_MS = 450;
 const SAFETY_TIMEOUT_MS = 10_000;
 
@@ -260,15 +264,7 @@ export function GlobalNavigationLoader() {
           styles.brandWrapper
         }
       >
-        <div className={styles.brandTyping}>
-            <span className={styles.cordoba}>
-                cordoba.
-            </span>
-
-            <span className={styles.onlineTyping}>
-                online...
-            </span>
-        </div>
+       <BrandTypingLoader />
       </div>
 
       <span

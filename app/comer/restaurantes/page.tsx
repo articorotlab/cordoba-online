@@ -23,7 +23,7 @@ type RestaurantsPageProps = {
   }>;
 };
 
-const RESTAURANTS_PER_PAGE = 20;
+const RESTAURANTS_PER_PAGE = 10;
 
 function getValidCategory(
   category: string | undefined,

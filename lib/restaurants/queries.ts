@@ -170,7 +170,7 @@ export async function getPublicRestaurantBySlug(
 export async function getPublicRestaurantDirectoryPage({
   category,
   offset = 0,
-  limit = 20,
+  limit = 10,
 }: {
   category?: string;
   offset?: number;
@@ -186,9 +186,9 @@ export async function getPublicRestaurantDirectoryPage({
   const safeLimit =
     Number.isInteger(limit) &&
     limit > 0 &&
-    limit <= 20
+    limit <= 10
       ? limit
-      : 20;
+      : 10;
 
   let query = supabase
     .from("restaurants")
