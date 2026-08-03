@@ -49,22 +49,22 @@
 }
 
 .onlineTyping {
-  width: 0;
-  max-width: 6ch;
+  display: inline-block;
 
-  overflow: hidden;
   white-space: nowrap;
 
   color: rgb(37 99 235);
 
-  border-right: 3px solid rgb(37 99 235);
+  clip-path: inset(
+    0 100% 0 0
+  );
 
   animation:
-    typeOnline 1.25s steps(6, end)
-      infinite,
-    blinkCaret 0.65s step-end
+    typeOnline 1.55s steps(9, end)
       infinite;
 }
+
+
 
 .screenReaderText {
   position: absolute;
@@ -84,44 +84,40 @@
 
 @keyframes typeOnline {
   0% {
-    width: 0;
+    clip-path: inset(
+      0 100% 0 0
+    );
   }
 
-  68% {
-    width: 6ch;
+  72% {
+    clip-path: inset(
+      0 0 0 0
+    );
   }
 
-  88% {
-    width: 6ch;
+  90% {
+    clip-path: inset(
+      0 0 0 0
+    );
   }
 
-  88.01% {
-    width: 0;
+  90.01% {
+    clip-path: inset(
+      0 100% 0 0
+    );
   }
 
   100% {
-    width: 0;
+    clip-path: inset(
+      0 100% 0 0
+    );
   }
 }
 
-@keyframes blinkCaret {
-  0%,
-  45% {
-    border-right-color:
-      rgb(37 99 235);
-  }
-
-  46%,
-  100% {
-    border-right-color:
-      transparent;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .onlineTyping {
-    width: 6ch;
-    border-right: 0;
+    clip-path: none;
     animation: none;
   }
 }

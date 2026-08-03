@@ -10,6 +10,10 @@ import {
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import {
+  IMAGE_BUCKET_NAME,
+} from "@/lib/images/storage-paths";
+
 function getStringField(
   formData: FormData,
   field: string,
@@ -286,5 +290,283 @@ export async function createRestaurant(
   redirectToRestaurants(
     "message",
     `${createdRestaurant.name} fue creado correctamente. Ahora puedes crear su cuenta de acceso.`,
+  );
+}
+
+function isValidUuid(
+  value: string,
+): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    value,
+  );
+}
+
+export async function deleteRestaurant(
+  formData: FormData,
+) {
+  await requireAdmin();
+
+  const restaurantId =
+    getStringField(
+      formData,
+      "restaurantId",
+    );
+
+  const confirmationName =
+    getStringField(
+      formData,
+      "confirmationName",
+    );
+
+  if (
+    !restaurantId ||
+    !isValidUuid(restaurantId)
+  ) {
+    redirectToRestaurants(
+      "error",
+      "El restaurante que intentas eliminar no es válido.",
+    );
+  }
+
+  const supabase =
+    createAdminClient();
+
+  const {
+    data: restaurant,
+    error: restaurantError,
+  } = await supabase
+    .from("restaurants")
+    .select("id, name, slug")
+    .eq("id", restaurantId)
+    .maybeSingle();
+
+  if (restaurantError) {
+    console.error(
+      "Error al buscar el restaurante que se eliminará:",
+      restaurantError,
+    );
+
+    redirectToRestaurants(
+      "error",
+      "No fue posible comprobar el restaurante.",
+    );
+  }
+
+  if (!restaurant) {
+    redirectToRestaurants(
+      "error",
+      "El restaurante ya no existe.",
+    );
+  }
+
+  if (
+    confirmationName !==
+    restaurant.name
+  ) {
+    redirectToRestaurants(
+      "error",
+      `Para eliminar el restaurante debes escribir exactamente: ${restaurant.name}`,
+    );
+  }
+
+  /*
+   * Primero localizamos todos los archivos que están
+   * dentro de la carpeta principal del restaurante:
+   *
+   * restaurant-images/<restaurantId>/...
+   */
+  async function getStorageFiles(
+    directory: string,
+  ): Promise<string[]> {
+    const foundFiles: string[] =
+      [];
+
+    let offset = 0;
+    const limit = 1000;
+
+    while (true) {
+      const {
+        data: entries,
+        error: listError,
+      } = await supabase.storage
+        .from(
+          IMAGE_BUCKET_NAME,
+        )
+        .list(directory, {
+          limit,
+          offset,
+          sortBy: {
+            column: "name",
+            order: "asc",
+          },
+        });
+
+      if (listError) {
+        throw listError;
+      }
+
+      const currentEntries =
+        entries ?? [];
+
+      for (
+        const entry
+        of currentEntries
+      ) {
+        const entryPath =
+          `${directory}/${entry.name}`;
+
+        /*
+         * Las carpetas virtuales de Storage no
+         * tienen id ni metadata.
+         */
+        const isDirectory =
+          entry.id === null ||
+          entry.metadata === null;
+
+        if (isDirectory) {
+          const nestedFiles =
+            await getStorageFiles(
+              entryPath,
+            );
+
+          foundFiles.push(
+            ...nestedFiles,
+          );
+        } else {
+          foundFiles.push(
+            entryPath,
+          );
+        }
+      }
+
+      if (
+        currentEntries.length <
+        limit
+      ) {
+        break;
+      }
+
+      offset +=
+        currentEntries.length;
+    }
+
+    return foundFiles;
+  }
+
+  let storageFiles: string[] =
+    [];
+
+  try {
+    storageFiles =
+      await getStorageFiles(
+        restaurantId,
+      );
+  } catch (storageListError) {
+    console.error(
+      "Error al buscar las imágenes del restaurante:",
+      storageListError,
+    );
+
+    redirectToRestaurants(
+      "error",
+      "No fue posible revisar las imágenes del restaurante. No se eliminó ningún dato.",
+    );
+  }
+
+  /*
+   * Eliminar el restaurante activa los ON DELETE
+   * CASCADE de productos, promociones, horarios,
+   * días de promociones y membresías.
+   */
+  const {
+    error: deleteError,
+  } = await supabase
+    .from("restaurants")
+    .delete()
+    .eq("id", restaurantId);
+
+  if (deleteError) {
+    console.error(
+      "Error al eliminar el restaurante y sus relaciones:",
+      deleteError,
+    );
+
+    redirectToRestaurants(
+      "error",
+      "No fue posible eliminar el restaurante.",
+    );
+  }
+
+  let storageCleanupFailed =
+    false;
+
+  /*
+   * Supabase recomienda eliminar archivos por lotes.
+   */
+  for (
+    let index = 0;
+    index < storageFiles.length;
+    index += 100
+  ) {
+    const batch =
+      storageFiles.slice(
+        index,
+        index + 100,
+      );
+
+    const {
+      error: removeError,
+    } = await supabase.storage
+      .from(
+        IMAGE_BUCKET_NAME,
+      )
+      .remove(batch);
+
+    if (removeError) {
+      storageCleanupFailed =
+        true;
+
+      console.error(
+        "Error al eliminar un lote de imágenes del restaurante:",
+        {
+          restaurantId,
+          files: batch,
+          error: removeError,
+        },
+      );
+    }
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(
+    "/admin/restaurantes",
+  );
+  revalidatePath(
+    "/admin/cuentas",
+  );
+  revalidatePath(
+    "/admin/cuentas/editar",
+  );
+  revalidatePath("/comer");
+  revalidatePath(
+    "/comer/restaurantes",
+  );
+  revalidatePath(
+    `/comer/${restaurant.slug}`,
+  );
+  revalidatePath(
+    "/promociones",
+  );
+
+  if (storageCleanupFailed) {
+    redirectToRestaurants(
+      "message",
+      `${restaurant.name} fue eliminado junto con sus datos. Algunas imágenes no pudieron limpiarse de Storage y quedaron registradas en los logs del servidor.`,
+    );
+  }
+
+  redirectToRestaurants(
+    "message",
+    `${restaurant.name} y todo su contenido fueron eliminados permanentemente.`,
   );
 }

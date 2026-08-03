@@ -18,6 +18,10 @@ import { Input } from "@/components/ui/input";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+import {
+  DeleteRestaurantButton,
+} from "@/components/admin/DeleteRestaurantButton";
+
 type AdminRestaurantsPageProps = {
   searchParams: Promise<{
     error?: string;
@@ -473,29 +477,40 @@ export default async function AdminRestaurantsPage({
                         </p>
 
                         <div className="mt-4 flex flex-wrap items-center gap-3">
-                          <Link
-                            href={`/comer/${restaurant.slug}`}
-                            target="_blank"
-                            className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 transition hover:text-blue-700"
-                          >
-                            <ExternalLink className="size-4" />
-
-                            Ver perfil
-                          </Link>
-
-                          {hasAccount ? (
-                            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                              Cuenta asignada
-                            </span>
-                          ) : (
                             <Link
-                              href="/admin/cuentas"
-                              className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100"
+                                href={`/comer/${restaurant.slug}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 transition hover:text-blue-700"
                             >
-                              Crear cuenta
+                                <ExternalLink className="size-4" />
+
+                                Ver perfil
                             </Link>
-                          )}
-                        </div>
+
+                            {hasAccount ? (
+                                <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                                Cuenta asignada
+                                </span>
+                            ) : (
+                                <Link
+                                href="/admin/cuentas"
+                                className="rounded-full bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-700 transition hover:bg-orange-100"
+                                >
+                                Crear cuenta
+                                </Link>
+                            )}
+
+                            <div className="basis-full border-t border-slate-100 pt-3 sm:ml-auto sm:basis-auto sm:border-0 sm:pt-0">
+                                <DeleteRestaurantButton
+                                restaurantId={
+                                    restaurant.id
+                                }
+                                restaurantName={
+                                    restaurant.name
+                                }
+                                />
+                            </div>
+                          </div>
                       </div>
                     </div>
                   </article>

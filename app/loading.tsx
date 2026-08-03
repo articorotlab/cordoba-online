@@ -18,7 +18,7 @@ export default function Loading() {
           </span>
 
           <span className={styles.onlineTyping}>
-            online
+            online...
           </span>
         </div>
       </div>

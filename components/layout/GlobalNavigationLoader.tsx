@@ -260,23 +260,13 @@ export function GlobalNavigationLoader() {
           styles.brandWrapper
         }
       >
-        <div
-            className={
-                styles.brandTyping
-            }
-            >
-            <span
-                className={styles.cordoba}
-            >
+        <div className={styles.brandTyping}>
+            <span className={styles.cordoba}>
                 cordoba.
             </span>
 
-            <span
-                className={
-                styles.onlineTyping
-                }
-            >
-                online
+            <span className={styles.onlineTyping}>
+                online...
             </span>
         </div>
       </div>

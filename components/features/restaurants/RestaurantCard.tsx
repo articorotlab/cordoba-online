@@ -31,11 +31,11 @@ export function RestaurantCard({
       restaurant,
     );
 
-  const coverCardUrl =
-    getImageVariantUrl(
-      restaurant.cover,
-      "card",
-    );
+  const coverDisplayUrl =
+  getImageVariantUrl(
+    restaurant.cover,
+    "display",
+  );
 
   const logoCardUrl =
     getImageVariantUrl(
@@ -48,11 +48,11 @@ export function RestaurantCard({
       href={`/comer/${restaurant.slug}`}
       className="group block overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-200 hover:shadow-xl"
     >
-      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-white">
-        {coverCardUrl ? (
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-orange-100 via-orange-50 to-white">
+        {coverDisplayUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={coverCardUrl}
+            src={coverDisplayUrl}
             alt={`Portada de ${restaurant.name}`}
             loading="lazy"
             decoding="async"
