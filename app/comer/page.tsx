@@ -83,32 +83,18 @@ export default async function ComerPage() {
               Hoy en Córdoba
             </p>
 
-            {isAuthenticated ? (
-              <>
-                <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                  Promociones de hoy
-                </h1>
+            <h1 className="mt-2 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+              <Flame
+                aria-hidden="true"
+                className="size-7 shrink-0 text-orange-500 sm:size-8"
+              />
 
-                <p className="mt-3 text-sm font-semibold text-slate-500">
-                  {promotionCount === 1
-                    ? "1 promoción disponible"
-                    : `${promotionCount} promociones disponibles`}
-                </p>
-              </>
-            ) : (
-              <h1 className="mt-2 flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
-                <Flame
-                  aria-hidden="true"
-                  className="size-7 shrink-0 text-orange-500 sm:size-8"
-                />
-
-                <span>
-                  {promotionCount === 1
-                    ? "1 promoción disponible"
-                    : `${promotionCount} promociones disponibles`}
-                </span>
-              </h1>
-            )}
+              <span>
+                {promotionCount === 1
+                  ? "1 promoción disponible"
+                  : `${promotionCount} promociones disponibles`}
+              </span>
+            </h1>
           </div>
 
           {isAuthenticated && (
