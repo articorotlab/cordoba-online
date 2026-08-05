@@ -47,6 +47,9 @@ type DatabasePublicPromotionPageRow = {
   restaurant_slug: string;
   restaurant_name: string;
   restaurant_zone: string;
+  restaurant_logo_url:
+  | string
+  | null;
 
   total_count:
     | number
@@ -132,14 +135,16 @@ function mapPromotion(
   return {
     promotion,
     restaurant: {
-      id:
-        row.restaurant_id,
-      slug:
-        row.restaurant_slug,
-      name:
-        row.restaurant_name,
-      zone:
-        row.restaurant_zone ?? "",
+        id:
+            row.restaurant_id,
+        slug:
+            row.restaurant_slug,
+        name:
+            row.restaurant_name,
+        zone:
+            row.restaurant_zone ?? "",
+        logo:
+            row.restaurant_logo_url,
     },
   };
 }

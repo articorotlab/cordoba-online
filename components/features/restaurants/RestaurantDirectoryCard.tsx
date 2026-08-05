@@ -8,9 +8,7 @@ import Link from "next/link";
 import {
   getImageVariantUrl,
 } from "@/lib/images/storage-url";
-import {
-  isRestaurantOpenNow,
-} from "@/lib/restaurants/public-utils";
+
 
 import type {
   PublicRestaurantDirectoryItem,
@@ -29,24 +27,8 @@ export function RestaurantDirectoryCard({
       "card",
     );
 
-  /*
-   * isRestaurantOpenNow solamente utiliza
-   * el horario del restaurante. Creamos el
-   * objeto mínimo compatible con la función.
-   */
-  const isOpen =
-    isRestaurantOpenNow({
-      ...restaurant,
-      address: "",
-      phone: null,
-      whatsapp: null,
-      instagram: null,
-      cover: null,
-      latitude: null,
-      longitude: null,
-      products: [],
-      promotions: [],
-    });
+const isOpen =
+  restaurant.isOpen;
 
   return (
     <Link

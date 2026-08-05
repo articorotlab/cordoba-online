@@ -222,6 +222,17 @@ export default async function LoginPage({
                 Crear cuenta
               </Link>
             </p>
+
+            <p className="mt-3 text-center text-sm text-slate-600">
+            <Link
+                href={`/recuperar-contrasena?redirect=${encodeURIComponent(
+                safeRedirect,
+                )}`}
+                className="font-bold text-blue-600 transition-colors hover:text-blue-700"
+            >
+                ¿Olvidaste tu contraseña?
+            </Link>
+            </p>
           </div>
         </div>
       </div>

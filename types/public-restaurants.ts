@@ -30,6 +30,7 @@ export type PublicPromotionRestaurantSummary = {
   slug: string;
   name: string;
   zone: string;
+  logo: string | null;
 };
 
 export type PublicRestaurantSchedule = {
@@ -48,7 +49,7 @@ export type PublicRestaurantDirectoryItem = {
   description: string;
   zone: string;
   logo: string | null;
-  schedule: PublicRestaurantSchedule[];
+  isOpen: boolean;
 };
 
 export type PublicRestaurantCardItem = {

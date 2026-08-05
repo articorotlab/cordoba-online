@@ -5,8 +5,11 @@ import type { DatabaseRestaurant } from "@/types/database-restaurants";
 import type {
   PublicRestaurant,
   PublicRestaurantDirectoryItem,
-  PublicRestaurantSchedule,
 } from "@/types/public-restaurants";
+
+import {
+  getCordobaNowContext,
+} from "@/lib/restaurants/cordoba-now";
 
 const restaurantSelect = `
   id,
@@ -60,40 +63,20 @@ const restaurantSelect = `
   )
 `;
 
-const restaurantDirectorySelect = `
-  id,
-  slug,
-  name,
-  category,
-  description,
-  zone,
-  logo_url,
-  schedule:restaurant_schedules (
-    id,
-    day,
-    opens_at,
-    closes_at,
-    closed
-  )
-`;
-
-type DatabaseRestaurantDirectoryRow = {
-  id: string;
-  slug: string;
-  name: string;
-  category: string;
-  description: string;
-  zone: string;
-  logo_url: string | null;
-  schedule:
-    | {
-        id: string;
-        day: PublicRestaurantSchedule["day"];
-        opens_at: string | null;
-        closes_at: string | null;
-        closed: boolean;
-      }[]
+type DatabaseRestaurantDirectoryPageRow = {
+  restaurant_id: string;
+  restaurant_slug: string;
+  restaurant_name: string;
+  restaurant_category: string;
+  restaurant_description: string;
+  restaurant_zone: string;
+  restaurant_logo_url:
+    | string
     | null;
+  is_open_now: boolean;
+  total_count:
+    | number
+    | string;
 };
 
 export type PublicRestaurantDirectoryPage = {
@@ -176,10 +159,9 @@ export async function getPublicRestaurantDirectoryPage({
   offset?: number;
   limit?: number;
 }): Promise<PublicRestaurantDirectoryPage> {
-  const supabase = createAdminClient();
-
   const safeOffset =
-    Number.isInteger(offset) && offset >= 0
+    Number.isInteger(offset) &&
+    offset >= 0
       ? offset
       : 0;
 
@@ -190,45 +172,42 @@ export async function getPublicRestaurantDirectoryPage({
       ? limit
       : 10;
 
-  let query = supabase
-    .from("restaurants")
-    .select(
-      restaurantDirectorySelect,
-      {
-        count: "exact",
-      },
-    )
-    .eq("is_active", true);
-
   const normalizedCategory =
     category?.trim();
 
-  if (
-    normalizedCategory &&
-    normalizedCategory !== "Todos"
-  ) {
-    query = query.eq(
-      "category",
-      normalizedCategory,
-    );
-  }
+  const context =
+    getCordobaNowContext();
+
+  const supabase =
+    createAdminClient();
 
   const {
     data,
     error,
-    count,
-  } = await query
-    .order("name", {
-      ascending: true,
-    })
-    .range(
-      safeOffset,
-      safeOffset + safeLimit - 1,
-    );
+  } = await supabase.rpc(
+    "get_public_restaurant_directory_page",
+    {
+      p_day:
+        context.day,
+      p_previous_day:
+        context.previousDay,
+      p_current_time:
+        context.currentTime,
+      p_category:
+        normalizedCategory &&
+        normalizedCategory !== "Todos"
+          ? normalizedCategory
+          : null,
+      p_offset:
+        safeOffset,
+      p_limit:
+        safeLimit,
+    },
+  );
 
   if (error) {
     console.error(
-      "Error al consultar el directorio de restaurantes:",
+      "Error al consultar el directorio público de restaurantes:",
       error,
     );
 
@@ -241,39 +220,45 @@ export async function getPublicRestaurantDirectoryPage({
 
   const rows =
     (data ??
-      []) as DatabaseRestaurantDirectoryRow[];
+      []) as DatabaseRestaurantDirectoryPageRow[];
 
   const restaurants =
     rows.map(
       (
-        restaurant,
+        row,
       ): PublicRestaurantDirectoryItem => ({
-        id: restaurant.id,
-        slug: restaurant.slug,
-        name: restaurant.name,
+        id:
+          row.restaurant_id,
+        slug:
+          row.restaurant_slug,
+        name:
+          row.restaurant_name,
         category:
-          restaurant.category,
+          row.restaurant_category,
         description:
-          restaurant.description ?? "",
-        zone: restaurant.zone ?? "",
-        logo: restaurant.logo_url,
-        schedule: (
-          restaurant.schedule ?? []
-        ).map((schedule) => ({
-          id: schedule.id,
-          day: schedule.day,
-          opensAt:
-            schedule.opens_at,
-          closesAt:
-            schedule.closes_at,
-          closed:
-            schedule.closed,
-        })),
+          row.restaurant_description ??
+          "",
+        zone:
+          row.restaurant_zone ??
+          "",
+        logo:
+          row.restaurant_logo_url,
+        isOpen:
+          row.is_open_now,
       }),
     );
 
+  const rawTotal =
+    rows.length > 0
+      ? Number(
+          rows[0].total_count,
+        )
+      : 0;
+
   const total =
-    count ?? restaurants.length;
+    Number.isFinite(rawTotal)
+      ? rawTotal
+      : 0;
 
   return {
     restaurants,
