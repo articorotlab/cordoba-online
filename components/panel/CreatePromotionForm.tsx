@@ -5,6 +5,7 @@ import {
   FileImage,
   LoaderCircle,
   Megaphone,
+  RotateCcw,
   TriangleAlert,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -138,6 +139,18 @@ export function CreatePromotionForm() {
   const fileInputRef =
     useRef<HTMLInputElement>(null);
 
+  const startTimeInputRef =
+    useRef<HTMLInputElement>(null);
+
+  const endTimeInputRef =
+    useRef<HTMLInputElement>(null);
+
+  const validFromInputRef =
+    useRef<HTMLInputElement>(null);
+
+  const validUntilInputRef =
+    useRef<HTMLInputElement>(null);
+
   const [
     selectedFile,
     setSelectedFile,
@@ -175,6 +188,32 @@ export function CreatePromotionForm() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function clearPromotionSchedule() {
+    if (startTimeInputRef.current) {
+      startTimeInputRef.current.value = "";
+    }
+
+    if (endTimeInputRef.current) {
+      endTimeInputRef.current.value = "";
+    }
+
+    setError(null);
+    setSuccess(null);
+  }
+
+  function clearPromotionValidity() {
+    if (validFromInputRef.current) {
+      validFromInputRef.current.value = "";
+    }
+
+    if (validUntilInputRef.current) {
+      validUntilInputRef.current.value = "";
+    }
+
+    setError(null);
+    setSuccess(null);
   }
 
   function handleDayChange(
@@ -229,49 +268,49 @@ export function CreatePromotionForm() {
      * Cuando cambia el estado, los campos se deshabilitan.
      */
     const formData =
-  new FormData(form);
+      new FormData(form);
 
-const imageFile =
-  selectedFile;
+    const imageFile =
+      selectedFile;
 
-const startTime =
-  String(
-    formData.get("startTime") ?? "",
-  ).trim();
+    const startTime =
+      String(
+        formData.get("startTime") ?? "",
+      ).trim();
 
-const endTime =
-  String(
-    formData.get("endTime") ?? "",
-  ).trim();
+    const endTime =
+      String(
+        formData.get("endTime") ?? "",
+      ).trim();
 
-if (
-  (startTime && !endTime) ||
-  (!startTime && endTime)
-) {
-  setError(
-    "Completa tanto la hora de inicio como la hora de fin.",
-  );
+    if (
+      (startTime && !endTime) ||
+      (!startTime && endTime)
+    ) {
+      setError(
+        "Completa tanto la hora de inicio como la hora de fin.",
+      );
 
-  return;
-}
+      return;
+    }
 
-if (
-  startTime &&
-  endTime &&
-  endTime <= startTime
-) {
-  setError(
-    "La hora de fin no puede ser del día siguiente. La promoción debe finalizar antes de las 11:59 PM del mismo día.",
-  );
+    if (
+      startTime &&
+      endTime &&
+      endTime <= startTime
+    ) {
+      setError(
+        "La hora de fin no puede ser del día siguiente. La promoción debe finalizar antes de las 11:59 PM del mismo día.",
+      );
 
-  return;
-}
+      return;
+    }
 
-/*
- * El archivo no debe enviarse a la Server Action.
- * La Server Action recibe únicamente los metadatos.
- */
-formData.delete("image");
+    /*
+     * El archivo no debe enviarse a la Server Action.
+     * La Server Action recibe únicamente los metadatos.
+     */
+    formData.delete("image");
 
     let createdPromotionId:
       | string
@@ -498,73 +537,143 @@ formData.delete("image");
         </p>
       </fieldset>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="new-promotion-start-time"
-          className="text-sm font-semibold text-neutral-800"
-        >
-          Hora de inicio
-        </label>
+      <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 lg:col-span-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-neutral-800">
+              Horario de la promoción
+            </h3>
 
-        <input
-          id="new-promotion-start-time"
-          name="startTime"
-          type="time"
-          disabled={isSubmitting}
-          className={inputClassName}
-        />
-      </div>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Déjalo vacío si la promoción está disponible
+              durante todo el día.
+            </p>
+          </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="new-promotion-end-time"
-          className="text-sm font-semibold text-neutral-800"
-        >
-          Hora de fin
-        </label>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={
+              clearPromotionSchedule
+            }
+            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw
+              aria-hidden="true"
+              className="size-4"
+            />
 
-        <input
-          id="new-promotion-end-time"
-          name="endTime"
-          type="time"
-          disabled={isSubmitting}
-          className={inputClassName}
-        />
-      </div>
+            Quitar horario
+          </button>
+        </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="new-promotion-valid-from"
-          className="text-sm font-semibold text-neutral-800"
-        >
-          Vigente desde
-        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor="new-promotion-start-time"
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Hora de inicio
+            </label>
 
-        <input
-          id="new-promotion-valid-from"
-          name="validFrom"
-          type="date"
-          disabled={isSubmitting}
-          className={inputClassName}
-        />
-      </div>
+            <input
+              ref={startTimeInputRef}
+              id="new-promotion-start-time"
+              name="startTime"
+              type="time"
+              disabled={isSubmitting}
+              className={inputClassName}
+            />
+          </div>
 
-      <div className="space-y-2">
-        <label
-          htmlFor="new-promotion-valid-until"
-          className="text-sm font-semibold text-neutral-800"
-        >
-          Vigente hasta
-        </label>
+          <div className="space-y-2">
+            <label
+              htmlFor="new-promotion-end-time"
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Hora de fin
+            </label>
 
-        <input
-          id="new-promotion-valid-until"
-          name="validUntil"
-          type="date"
-          disabled={isSubmitting}
-          className={inputClassName}
-        />
-      </div>
+            <input
+              ref={endTimeInputRef}
+              id="new-promotion-end-time"
+              name="endTime"
+              type="time"
+              disabled={isSubmitting}
+              className={inputClassName}
+            />
+          </div>
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-4 lg:col-span-2">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-neutral-800">
+              Vigencia
+            </h3>
+
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Déjala vacía si la promoción no tiene fecha de
+              inicio ni vencimiento.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={
+              clearPromotionValidity
+            }
+            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw
+              aria-hidden="true"
+              className="size-4"
+            />
+
+            Quitar vigencia
+          </button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor="new-promotion-valid-from"
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Vigente desde
+            </label>
+
+            <input
+              ref={validFromInputRef}
+              id="new-promotion-valid-from"
+              name="validFrom"
+              type="date"
+              disabled={isSubmitting}
+              className={inputClassName}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor="new-promotion-valid-until"
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Vigente hasta
+            </label>
+
+            <input
+              ref={validUntilInputRef}
+              id="new-promotion-valid-until"
+              name="validUntil"
+              type="date"
+              disabled={isSubmitting}
+              className={inputClassName}
+            />
+          </div>
+        </div>
+      </section>
 
       <div className="space-y-3 lg:col-span-2">
         <input
@@ -691,11 +800,13 @@ formData.delete("image");
           {isSubmitting ? (
             <>
               <LoaderCircle className="size-5 animate-spin" />
+
               Procesando promoción...
             </>
           ) : (
             <>
               <Megaphone className="size-5" />
+
               Crear promoción
             </>
           )}

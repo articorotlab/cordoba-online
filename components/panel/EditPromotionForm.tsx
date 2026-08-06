@@ -4,6 +4,7 @@ import {
   CircleCheck,
   FileImage,
   LoaderCircle,
+  RotateCcw,
   Save,
   TriangleAlert,
 } from "lucide-react";
@@ -168,6 +169,34 @@ export function EditPromotionForm({
   );
 
   const [
+    startTime,
+    setStartTime,
+  ] = useState(
+    promotion.startTime,
+  );
+
+  const [
+    endTime,
+    setEndTime,
+  ] = useState(
+    promotion.endTime,
+  );
+
+  const [
+    validFrom,
+    setValidFrom,
+  ] = useState(
+    promotion.validFrom,
+  );
+
+  const [
+    validUntil,
+    setValidUntil,
+  ] = useState(
+    promotion.validUntil,
+  );
+
+  const [
     stage,
     setStage,
   ] = useState<EditStage>("idle");
@@ -194,6 +223,22 @@ export function EditPromotionForm({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }
+
+  function clearPromotionSchedule() {
+    setStartTime("");
+    setEndTime("");
+
+    setError(null);
+    setSuccess(null);
+  }
+
+  function clearPromotionValidity() {
+    setValidFrom("");
+    setValidUntil("");
+
+    setError(null);
+    setSuccess(null);
   }
 
   function handleDayChange(
@@ -241,54 +286,90 @@ export function EditPromotionForm({
     setSuccess(null);
 
     /*
-     * Se crea FormData antes de deshabilitar los campos.
+     * FormData se crea antes de que el estado
+     * deshabilite los campos del formulario.
      */
     const formData =
-  new FormData(
-    event.currentTarget,
-  );
+      new FormData(
+        event.currentTarget,
+      );
 
-const imageFile =
-  selectedFile;
+    const imageFile =
+      selectedFile;
 
-const startTime =
-  String(
-    formData.get("startTime") ?? "",
-  ).trim();
+    /*
+     * Al ser inputs controlados, estos valores
+     * coinciden exactamente con lo mostrado.
+     */
+    const normalizedStartTime =
+      startTime.trim();
 
-const endTime =
-  String(
-    formData.get("endTime") ?? "",
-  ).trim();
+    const normalizedEndTime =
+      endTime.trim();
 
-if (
-  (startTime && !endTime) ||
-  (!startTime && endTime)
-) {
-  setError(
-    "Completa tanto la hora de inicio como la hora de fin.",
-  );
+    if (
+      (
+        normalizedStartTime &&
+        !normalizedEndTime
+      ) ||
+      (
+        !normalizedStartTime &&
+        normalizedEndTime
+      )
+    ) {
+      setError(
+        "Completa tanto la hora de inicio como la hora de fin.",
+      );
 
-  return;
-}
+      return;
+    }
 
-if (
-  startTime &&
-  endTime &&
-  endTime <= startTime
-) {
-  setError(
-    "La hora de fin no puede ser del día siguiente. La promoción debe finalizar antes de las 11:59 PM del mismo día.",
-  );
+    if (
+      normalizedStartTime &&
+      normalizedEndTime &&
+      normalizedEndTime <=
+        normalizedStartTime
+    ) {
+      setError(
+        "La hora de fin no puede ser del día siguiente. La promoción debe finalizar antes de las 11:59 PM del mismo día.",
+      );
 
-  return;
-}
+      return;
+    }
 
-/*
- * La imagen no debe viajar a la Server Action.
- * La Server Action recibe únicamente metadatos.
- */
-formData.delete("image");
+    /*
+     * Aseguramos explícitamente que FormData
+     * reciba los valores controlados actuales.
+     *
+     * Cuando se pulsa Quitar horario o vigencia,
+     * se envían cadenas vacías y el backend las
+     * transforma en null.
+     */
+    formData.set(
+      "startTime",
+      normalizedStartTime,
+    );
+
+    formData.set(
+      "endTime",
+      normalizedEndTime,
+    );
+
+    formData.set(
+      "validFrom",
+      validFrom.trim(),
+    );
+
+    formData.set(
+      "validUntil",
+      validUntil.trim(),
+    );
+
+    /*
+     * La imagen no debe viajar a la Server Action.
+     * La Server Action recibe únicamente metadatos.
+     */
+    formData.delete("image");
 
     try {
       setStage("updating");
@@ -465,8 +546,10 @@ formData.delete("image");
 
             const disabled =
               isSubmitting ||
-              (!checked &&
-                maximumReached);
+              (
+                !checked &&
+                maximumReached
+              );
 
             return (
               <label
@@ -507,89 +590,175 @@ formData.delete("image");
         </p>
       </fieldset>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            htmlFor={`start-time-${promotion.id}`}
-            className="text-sm font-semibold text-neutral-800"
-          >
-            Hora de inicio
-          </label>
+      <section className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-neutral-800">
+              Horario de la promoción
+            </h3>
 
-          <input
-            id={`start-time-${promotion.id}`}
-            name="startTime"
-            type="time"
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Déjalo vacío para que la promoción esté
+              disponible durante todo el día.
+            </p>
+          </div>
+
+          <button
+            type="button"
             disabled={isSubmitting}
-            defaultValue={
-              promotion.startTime
+            onClick={
+              clearPromotionSchedule
             }
-            className={inputClassName}
-          />
+            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw
+              aria-hidden="true"
+              className="size-4"
+            />
+
+            Quitar horario
+          </button>
         </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor={`end-time-${promotion.id}`}
-            className="text-sm font-semibold text-neutral-800"
-          >
-            Hora de fin
-          </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor={`start-time-${promotion.id}`}
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Hora de inicio
+            </label>
 
-          <input
-            id={`end-time-${promotion.id}`}
-            name="endTime"
-            type="time"
-            disabled={isSubmitting}
-            defaultValue={
-              promotion.endTime
-            }
-            className={inputClassName}
-          />
+            <input
+              id={`start-time-${promotion.id}`}
+              name="startTime"
+              type="time"
+              disabled={isSubmitting}
+              value={startTime}
+              onChange={(changeEvent) => {
+                setStartTime(
+                  changeEvent.target.value,
+                );
+
+                setError(null);
+                setSuccess(null);
+              }}
+              className={inputClassName}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor={`end-time-${promotion.id}`}
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Hora de fin
+            </label>
+
+            <input
+              id={`end-time-${promotion.id}`}
+              name="endTime"
+              type="time"
+              disabled={isSubmitting}
+              value={endTime}
+              onChange={(changeEvent) => {
+                setEndTime(
+                  changeEvent.target.value,
+                );
+
+                setError(null);
+                setSuccess(null);
+              }}
+              className={inputClassName}
+            />
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <label
-            htmlFor={`valid-from-${promotion.id}`}
-            className="text-sm font-semibold text-neutral-800"
-          >
-            Vigente desde
-          </label>
+      <section className="space-y-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-neutral-800">
+              Vigencia
+            </h3>
 
-          <input
-            id={`valid-from-${promotion.id}`}
-            name="validFrom"
-            type="date"
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
+              Déjala vacía para que la promoción no
+              tenga una fecha de inicio ni vencimiento.
+            </p>
+          </div>
+
+          <button
+            type="button"
             disabled={isSubmitting}
-            defaultValue={
-              promotion.validFrom
+            onClick={
+              clearPromotionValidity
             }
-            className={inputClassName}
-          />
+            className="inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-orange-200 bg-white px-3 py-2 text-xs font-semibold text-orange-600 shadow-sm transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <RotateCcw
+              aria-hidden="true"
+              className="size-4"
+            />
+
+            Quitar vigencia
+          </button>
         </div>
 
-        <div className="space-y-2">
-          <label
-            htmlFor={`valid-until-${promotion.id}`}
-            className="text-sm font-semibold text-neutral-800"
-          >
-            Vigente hasta
-          </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <label
+              htmlFor={`valid-from-${promotion.id}`}
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Vigente desde
+            </label>
 
-          <input
-            id={`valid-until-${promotion.id}`}
-            name="validUntil"
-            type="date"
-            disabled={isSubmitting}
-            defaultValue={
-              promotion.validUntil
-            }
-            className={inputClassName}
-          />
+            <input
+              id={`valid-from-${promotion.id}`}
+              name="validFrom"
+              type="date"
+              disabled={isSubmitting}
+              value={validFrom}
+              onChange={(changeEvent) => {
+                setValidFrom(
+                  changeEvent.target.value,
+                );
+
+                setError(null);
+                setSuccess(null);
+              }}
+              className={inputClassName}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label
+              htmlFor={`valid-until-${promotion.id}`}
+              className="text-sm font-semibold text-neutral-800"
+            >
+              Vigente hasta
+            </label>
+
+            <input
+              id={`valid-until-${promotion.id}`}
+              name="validUntil"
+              type="date"
+              disabled={isSubmitting}
+              value={validUntil}
+              onChange={(changeEvent) => {
+                setValidUntil(
+                  changeEvent.target.value,
+                );
+
+                setError(null);
+                setSuccess(null);
+              }}
+              className={inputClassName}
+            />
+          </div>
         </div>
-      </div>
+      </section>
 
       <div className="space-y-3">
         <input
@@ -723,11 +892,13 @@ formData.delete("image");
         {isSubmitting ? (
           <>
             <LoaderCircle className="size-5 animate-spin" />
+
             Guardando cambios...
           </>
         ) : (
           <>
             <Save className="size-5" />
+
             Guardar cambios
           </>
         )}
