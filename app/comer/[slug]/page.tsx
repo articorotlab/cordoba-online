@@ -278,7 +278,7 @@ export default async function RestaurantPage({
     <>
       <section className="border-b border-orange-100 bg-gradient-to-br from-orange-50/70 via-white to-white">
         <PageContainer className="py-6 sm:py-8">
-            <div className="sticky top-4 z-50 mb-5">
+            <div className="mb-5">
                 <Link
                     href="/comer"
                     className="group inline-flex h-11 items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 text-sm font-bold text-orange-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
